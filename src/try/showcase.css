@@ -18,17 +18,20 @@
   font-size:.62rem; letter-spacing:.28em; color:rgba(233,228,255,.32); pointer-events:none; white-space:nowrap}
 
 /* editorial title per act — sculptural uppercase, line-height .9 */
-.sc-title{position:fixed; z-index:6; pointer-events:none; max-width:min(46vw,620px); animation:scIn .7s cubic-bezier(.16,.84,.28,1)}
-.sc-title.left{left:clamp(24px,6vw,90px); top:50%; transform:translateY(-50%); text-align:left}
-.sc-title.center{left:50%; bottom:12vh; transform:translateX(-50%); text-align:center; max-width:min(90vw,760px)}
+.sc-title{position:fixed; z-index:6; pointer-events:none; max-width:min(44vw,600px)}
+.sc-title.left{left:clamp(24px,6vw,80px); top:50%; transform:translateY(-50%); text-align:left; animation:scL .7s cubic-bezier(.16,.9,.3,1)}
+.sc-title.right{right:clamp(24px,6vw,80px); top:46%; transform:translateY(-50%); text-align:right; animation:scR .7s cubic-bezier(.16,.9,.3,1)}
+.sc-title.center{left:50%; bottom:12vh; transform:translateX(-50%); text-align:center; max-width:min(90vw,780px); animation:scC .7s cubic-bezier(.16,.9,.3,1)}
 .sc-kick{font-size:.72rem; font-weight:500; letter-spacing:.24em; color:#7fe8c4; text-transform:uppercase}
-.sc-title h2{font-weight:700; font-size:clamp(2.6rem,7vw,5.4rem); line-height:.9; letter-spacing:-.01em; text-transform:uppercase; margin:14px 0 18px}
-.sc-title h2 .ln{display:block; background:linear-gradient(100deg,#f4f1ff,#b7c0ff 60%,#b48cff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
+.sc-title h2{font-weight:700; font-size:clamp(2.8rem,7.5vw,5.8rem); line-height:.88; letter-spacing:-.015em; text-transform:uppercase; margin:14px 0 18px}
+.sc-title h2 .ln{display:block; background:linear-gradient(100deg,#f4f1ff,#b7c0ff 55%,#ff9ecb); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation:scLn .55s backwards}
+.sc-title h2 .ln:nth-child(2){animation-delay:.06s} .sc-title h2 .ln:nth-child(3){animation-delay:.12s}
 .sc-title p{font-size:clamp(1rem,1.5vw,1.28rem); font-weight:400; line-height:1.4; color:rgba(233,228,255,.72); max-width:34ch}
-.sc-title.center p{margin:0 auto}
-@keyframes scIn{from{opacity:0; transform:translateY(calc(-50% + 18px))} }
-.sc-title.center{animation:scInC .7s cubic-bezier(.16,.84,.28,1)}
-@keyframes scInC{from{opacity:0; transform:translateX(-50%) translateY(18px)} }
+.sc-title.center p,.sc-title.right p{margin-left:auto}
+@keyframes scL{from{opacity:0; transform:translateY(-50%) translateX(-40px) rotate(-2deg)} }
+@keyframes scR{from{opacity:0; transform:translateY(-50%) translateX(40px) rotate(2deg)} }
+@keyframes scC{from{opacity:0; transform:translateX(-50%) translateY(30px)} }
+@keyframes scLn{from{opacity:0; transform:translateY(28px) skewY(4deg)} to{opacity:1; transform:none} }
 
 /* spec strip */
 .sc-specs{position:fixed; left:clamp(24px,6vw,90px); bottom:34px; z-index:6; display:flex; align-items:center; gap:14px;

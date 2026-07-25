@@ -10,18 +10,18 @@ import './showcase.css';
 // comes and goes. Aurora Groove brand, ORYZO-style structure.
 
 const ACTS = [
-  { kick: 'THE DEVICE', head: 'THE STUDIO\nIN YOUR HANDS', body: 'One glass slate. A whole band inside it. Scroll — and watch it build itself.' },
-  { kick: '01 · DRUMS', head: 'IT STARTS\nWITH A PULSE', body: 'The kit drops in first. Four on the floor, locked to the grid, dead tight.' },
-  { kick: '02 · BASS', head: 'THE LOW\nEND LANDS', body: 'A sub that moves the room. It fuses into the slate and the floor starts to move.' },
-  { kick: '03 · KEYS', head: 'HARMONY,\nIN YOUR HANDS', body: 'Chords fly in and merge. Every note already in key — nothing you press is wrong.' },
-  { kick: '04 · HATS', head: 'THE GROOVE\nTIGHTENS', body: 'Hats and shakers snap into the swing. The pocket gets deep.' },
-  { kick: '05 · ARP', head: 'MOVEMENT\nARRIVES', body: 'An arpeggio spirals into the core and the track starts to shimmer.' },
-  { kick: '06 · LEAD', head: 'A VOICE\nCUTS THROUGH', body: 'The topline ignites over the top — the hook that makes it yours.' },
-  { kick: '07 · PAD', head: 'ATMOSPHERE\nBLOOMS', body: 'Warm air fills the space between every hit. The track breathes.' },
-  { kick: '08 · FX', head: 'THE DROP\nHITS', body: 'Risers, impact, sparks. Everything you stacked detonates into one track.' },
-  { kick: 'AURORA GROOVE', head: 'MADE FOR\nANYONE', body: 'Eight layers. One slate. Built by scrolling. Now go make your own.' },
+  { kick: 'AURORA GROOVE', head: 'MAKE\nCHAOS\nSING', body: 'Scroll. Every push detonates a layer. Watch the storm build a track out of nothing.' },
+  { kick: '01 · PULSE', head: 'IGNITE\nTHE CORE', body: 'The first beat cracks the core open. The field starts to spin.' },
+  { kick: '02 · WEIGHT', head: 'DROP\nTHE WEIGHT', body: 'Low end lands like gravity. Everything bends toward the centre.' },
+  { kick: '03 · LIGHT', head: 'BEND\nTHE LIGHT', body: 'Harmony floods in and the whole storm changes colour.' },
+  { kick: '04 · GRID', head: 'SHATTER\nTHE GRID', body: 'Shards break loose and tumble. The groove goes feral.' },
+  { kick: '05 · SPIN', head: 'SPIN IT\nFASTER', body: 'Movement spirals up. The vortex tightens and screams.' },
+  { kick: '06 · TEAR', head: 'TEAR\nIT OPEN', body: 'A voice rips through the noise — the hook that makes it yours.' },
+  { kick: '07 · FLOOD', head: 'FLOOD\nTHE VOID', body: 'Atmosphere drowns the gaps. The whole void is alive now.' },
+  { kick: '08 · DETONATE', head: 'BLOW IT\nALL UP', body: 'Everything you stacked detonates into one relentless track.' },
+  { kick: 'AURORA GROOVE', head: 'YOU MADE\nTHE STORM', body: 'Eight layers of chaos, one track — built by scrolling. Now make your own.' },
 ];
-const ACT_P = (i: number) => 0.08 + i * 0.095;   // instrument i merges around here (i 0..7)
+const ACT_P = (i: number) => 0.08 + i * 0.095;   // chaos layer i detonates around here (i 0..7)
 
 const clamp = (x: number) => Math.min(1, Math.max(0, x));
 function hasWebGL() { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch { return false; } }
@@ -101,8 +101,8 @@ function ShowcaseFlight() {
       </nav>
       <span className="sc-side" aria-hidden="true">AURORA GROOVE · 8-LAYER SLATE</span>
 
-      {/* editorial title per act */}
-      <div className={'sc-title ' + (act === 0 || act === 9 ? 'center' : 'left')} key={act}>
+      {/* kinetic title per act — position jumps around for chaos */}
+      <div className={'sc-title ' + ['center', 'left', 'right', 'left', 'right', 'center', 'right', 'left', 'right', 'center'][act]} key={act}>
         <span className="sc-kick">{A.kick}</span>
         <h2>{A.head.split('\n').map((l, i) => <span key={i} className="ln">{l}</span>)}</h2>
         <p>{A.body}</p>
