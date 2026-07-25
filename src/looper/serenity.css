@@ -113,14 +113,14 @@
 .sr-tab.active .tk{color:var(--hue); border-color:color-mix(in srgb,var(--hue) 55%,transparent)}
 .sr-tab.mic{border-radius:999px}
 .sr-sep{width:1px; align-self:stretch; background:var(--brd); margin:0 5px}
-.sr-pod{display:flex; align-items:stretch; gap:16px; padding:10px 16px; border-radius:18px}
-.sr-fxgrid{flex:1; display:grid; grid-template-columns:1fr 1fr; gap:11px 6%; align-content:center}
+.sr-pod{display:flex; align-items:stretch; gap:16px; padding:12px 22px; border-radius:18px}
+.sr-fxgrid{flex:1; display:grid; grid-template-columns:1fr 1fr; gap:12px 30px; align-content:center; min-width:0}
 .sr-fx{display:flex; align-items:center; gap:12px; cursor:pointer}
 .sr-fx .l{font-family:var(--mono); font-size:.76rem; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:var(--dim); width:30px}
-.sr-fx input[type=range]{-webkit-appearance:none; appearance:none; flex:1; min-width:90px; height:5px; border-radius:3px; cursor:pointer; background:rgba(255,255,255,.16)}
+.sr-fx input[type=range]{-webkit-appearance:none; appearance:none; flex:1; min-width:60px; height:5px; border-radius:3px; cursor:pointer; background:rgba(255,255,255,.16)}
 .sr-fx input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:15px; height:15px; border-radius:50%; cursor:pointer;
   background:radial-gradient(circle at 35% 30%, #fff, var(--hue)); box-shadow:0 0 10px var(--hue)}
-.sr-fx b{font-family:var(--mono); font-weight:600; font-size:1.15rem; min-width:15px; text-align:center; font-variant-numeric:tabular-nums; color:var(--txt)}
+.sr-fx b{font-family:var(--mono); font-weight:600; font-size:1.15rem; min-width:18px; text-align:right; flex:0 0 auto; font-variant-numeric:tabular-nums; color:var(--txt)}
 /* REC row: undo/clear (left) · REC (grows) · New Groove/Help (right) */
 .sr-krow.recrow{display:flex; align-items:stretch; gap:calc(var(--u)*0.2); width:100%}
 .sr-krow.recrow .sr-cap.space{flex:1 1 auto; width:auto}
