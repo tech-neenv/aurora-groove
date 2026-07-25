@@ -111,18 +111,24 @@
 .sr-tab.active .tk{color:var(--hue); border-color:color-mix(in srgb,var(--hue) 55%,transparent)}
 .sr-tab.mic{border-radius:999px}
 .sr-sep{width:1px; align-self:stretch; background:var(--brd); margin:0 5px}
-.sr-pod{display:flex; align-items:center; gap:14px; padding:10px 16px; border-radius:18px}
-.sr-fxgrid{display:grid; grid-template-columns:1fr 1fr; gap:9px 22px}
-.sr-fx{display:flex; align-items:center; gap:10px; cursor:pointer}
+.sr-pod{display:flex; align-items:stretch; gap:16px; padding:10px 16px; border-radius:18px}
+.sr-fxgrid{flex:1; display:grid; grid-template-columns:1fr 1fr; gap:11px 6%; align-content:center}
+.sr-fx{display:flex; align-items:center; gap:12px; cursor:pointer}
 .sr-fx .l{font-family:var(--mono); font-size:.76rem; font-weight:500; letter-spacing:.05em; text-transform:uppercase; color:var(--dim); width:30px}
-.sr-fx input[type=range]{-webkit-appearance:none; appearance:none; width:100px; height:5px; border-radius:3px; cursor:pointer; background:rgba(255,255,255,.16)}
+.sr-fx input[type=range]{-webkit-appearance:none; appearance:none; flex:1; min-width:90px; height:5px; border-radius:3px; cursor:pointer; background:rgba(255,255,255,.16)}
 .sr-fx input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:15px; height:15px; border-radius:50%; cursor:pointer;
   background:radial-gradient(circle at 35% 30%, #fff, var(--hue)); box-shadow:0 0 10px var(--hue)}
 .sr-fx b{font-family:var(--mono); font-weight:600; font-size:1.15rem; min-width:15px; text-align:center; font-variant-numeric:tabular-nums; color:var(--txt)}
-.sr-pod .tr{display:flex; flex-direction:column; gap:6px; border-left:1px solid var(--brd); padding-left:14px}
-.sr-pod .tr button{padding:7px 13px; background:rgba(0,0,0,.22); border:1px solid var(--brd); border-radius:9px; color:var(--dim); font-size:.72rem; letter-spacing:.06em; text-transform:uppercase}
-.sr-pod .tr button:hover:not(:disabled){color:var(--hue); border-color:var(--hue)}
-.sr-pod .tr button:disabled{opacity:.3}
+/* undo / clear — stacked square chips (like metronome/assist), undo violet · clear red */
+.sr-uc{display:flex; flex-direction:column; gap:8px; flex:0 0 auto; width:92px; border-left:1px solid var(--brd); padding-left:16px}
+.sr-uc button{flex:1; display:flex; align-items:center; justify-content:center; border-radius:14px; min-height:44px;
+  background:var(--glass2); border:1px solid var(--brd); color:var(--dim); backdrop-filter:blur(10px);
+  font-family:var(--disp); font-weight:600; font-size:.82rem; letter-spacing:.09em; text-transform:uppercase; cursor:pointer; transition:.2s}
+.sr-uc button:disabled{opacity:.4; cursor:default}
+.sr-uc .undo{border-color:color-mix(in srgb,var(--hue) 50%,transparent); color:color-mix(in srgb,var(--hue) 55%, var(--txt))}
+.sr-uc .undo:hover:not(:disabled){color:var(--hue); border-color:var(--hue); box-shadow:0 0 20px -8px var(--hue), inset 0 0 16px -11px var(--hue)}
+.sr-uc .clear{border-color:color-mix(in srgb,#ff6b6b 52%,transparent); color:#ffa1a1}
+.sr-uc .clear:hover:not(:disabled){color:#ffbcbc; border-color:#ff6b6b; box-shadow:0 0 20px -8px #ff6b6b, inset 0 0 16px -11px #ff6b6b}
 
 /* keyboard */
 .sr-board{flex:0 0 auto; display:flex; flex-direction:column; gap:calc(var(--u)*0.15); align-items:center; justify-content:flex-start; padding:4px 12px 0}
@@ -270,7 +276,7 @@
 
 /* clickable feel — subtle lift + pointer on everything you can touch */
 .sr-top .chip:not(.static), .sr-tab, .sr-mini, .sr-cap.lit, .sr-cap.miclit, .sr-cap.space,
-.sr-fx, .sr-pod .tr button, .sr-top .step button{cursor:pointer}
+.sr-fx, .sr-uc button, .sr-top .step button{cursor:pointer}
 .sr-cap.asleep, .sr-cap.num, .sr-cap.mod, .sr-fx input{cursor:default}
 .sr-fx input[type=range]{cursor:pointer}
 .sr-tab:hover{background:color-mix(in srgb,var(--hue) 10%, var(--glass2))}

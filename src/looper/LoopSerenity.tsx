@@ -364,7 +364,10 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
             <Fx label="drv" val={fxA.drive} min={0} set={(v) => { looper.setInstDrive(fxId, v); force(); }} />
             <Fx label="sus" val={fxA.sustain} min={0} set={(v) => { looper.setInstSustain(fxId, v); force(); }} />
           </div>
-          <div className="tr"><button onClick={() => looper.undo()} disabled={looper.layers.length === 0}>undo</button><button onClick={() => looper.clear()} disabled={looper.layers.length === 0}>clear</button></div>
+          <div className="sr-uc">
+            <button className="undo" onClick={() => looper.undo()} disabled={looper.layers.length === 0}>undo</button>
+            <button className="clear" onClick={() => looper.clear()} disabled={looper.layers.length === 0}>clear</button>
+          </div>
         </div>
       </div>
 
