@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { engine } from '../audio/engine';
-import { useAuth } from '../lib/auth';
 import { FluidCanvas } from '../looper/FluidCanvas';
 import './landing.css';
 
@@ -118,7 +117,6 @@ function MiniLayers() {
 
 export default function Landing() {
   const nav = useNavigate();
-  const { user, signIn, enabled } = useAuth();
   const [pulse, setPulse] = useState(0);
   const [busy, setBusy] = useState('');
   const openStudio = () => nav('/studio');
@@ -137,7 +135,6 @@ export default function Landing() {
           <span className="wm"><b>Aurora</b> Groove</span>
         </div>
         <div className="lz-navend">
-          {enabled && !user && <button className="lz-btn ghost" onClick={() => void signIn()}>Sign in</button>}
           <button className="lz-btn solid" onClick={openStudio}>Open Studio</button>
         </div>
       </nav>
