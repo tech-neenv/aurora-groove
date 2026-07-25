@@ -7,6 +7,7 @@ import AuthCallback from './pages/AuthCallback';
 // Concept prototypes — lazy so their WebGL/three payload only loads when visited.
 const Try1 = lazy(() => import('./try/ZeroG'));
 const Try2 = lazy(() => import('./try/Merge'));
+const Try3 = lazy(() => import('./try/Showcase'));
 
 // Aurora Groove — routes. Anything unknown falls back to the landing page.
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/studio" element={<Studio />} />
         <Route path="/try1" element={<Suspense fallback={<div style={{ background: '#05040c', width: '100%', height: '100vh' }} />}><Try1 /></Suspense>} />
         <Route path="/try2" element={<Suspense fallback={<div style={{ background: '#05040c', width: '100%', height: '100vh' }} />}><Try2 /></Suspense>} />
+        <Route path="/try3" element={<Suspense fallback={<div style={{ background: '#070510', width: '100%', height: '100vh' }} />}><Try3 /></Suspense>} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

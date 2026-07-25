@@ -3,6 +3,10 @@
     <linearGradient id="aurora" x1="120" y1="470" x2="1080" y2="140" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#3fe0a6"/><stop offset=".5" stop-color="#49a6ea"/><stop offset="1" stop-color="#b48cff"/>
     </linearGradient>
+    <!-- horizontal gradient spanning the wordmark: logo palette green -> blue -> purple -->
+    <linearGradient id="auroraText" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3fe0a6"/><stop offset=".5" stop-color="#5fb0f0"/><stop offset="1" stop-color="#b48cff"/>
+    </linearGradient>
     <radialGradient id="glowA" cx="18%" cy="14%" r="60%">
       <stop offset="0" stop-color="#3fe0a6" stop-opacity=".18"/><stop offset="1" stop-color="#3fe0a6" stop-opacity="0"/>
     </radialGradient>
@@ -17,13 +21,14 @@
 
   <!-- aurora ribbon (favicon motif, scaled up) -->
   <path d="M120 430 C 300 150, 480 165, 560 400 C 620 585, 850 600, 1080 210"
-        fill="none" stroke="url(#aurora)" stroke-width="18" stroke-linecap="round"/>
+        fill="none" stroke="url(#aurora)" stroke-width="18" stroke-linecap="round" opacity=".85"/>
   <path d="M150 505 C 330 260, 520 275, 600 470 C 650 605, 870 605, 1050 400"
-        fill="none" stroke="url(#aurora)" stroke-width="10" stroke-linecap="round" opacity=".45"/>
+        fill="none" stroke="url(#aurora)" stroke-width="10" stroke-linecap="round" opacity=".4"/>
 
-  <!-- wordmark -->
+  <!-- wordmark: logo palette gradient -->
   <text x="96" y="300" font-family="'Bricolage Grotesque', 'Segoe UI', Helvetica, Arial, sans-serif"
-        font-size="104" font-weight="700" fill="#f4f1ff" letter-spacing="-2">Aurora Groove</text>
+        font-size="104" font-weight="700" fill="url(#auroraText)" letter-spacing="-2">Aurora Groove</text>
+  <!-- subtext: white -->
   <text x="100" y="372" font-family="'Bricolage Grotesque', 'Segoe UI', Helvetica, Arial, sans-serif"
-        font-size="44" font-weight="500" fill="#b7aee6">Vibe On Your Own Grooves</text>
+        font-size="44" font-weight="500" fill="#ffffff">Make Your Own Music</text>
 </svg>
