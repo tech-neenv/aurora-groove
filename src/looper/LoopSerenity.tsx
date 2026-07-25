@@ -13,6 +13,8 @@ const HUE = '#9B8CFF';
 
 interface Save { id: number; name: string; session: Session }
 const SAVES_KEY = 'riyaaz.looper.saves';
+// carries the in-progress loop across the Google OAuth full-page redirect
+const PENDING_KEY = 'aurora.pending.session';
 const readSaves = (): Save[] => { try { return JSON.parse(localStorage.getItem(SAVES_KEY) || '[]'); } catch { return []; } };
 const writeSaves = (a: Save[]) => localStorage.setItem(SAVES_KEY, JSON.stringify(a));
 // voice PCM is heavy — if the store overflows, retry without the voice audio.
@@ -82,7 +84,7 @@ function Fx({ label, val, min, set }: { label: string; val: number; min: number;
 
 export function LoopSerenity({ onExit }: { onExit: () => void }) {
   const h = useLooper();
-  const { looper, tab, micActive, selectTab, padFor, bpmDraft, setBpmDraft, commitBpm,
+  const { looper, ready, tab, micActive, selectTab, padFor, bpmDraft, setBpmDraft, commitBpm,
     showKeys, setShowKeys, headRef, capRef, play, rec, lb, recLabel, fxId, fxA, force } = h;
 
   useEffect(() => { const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onExit(); }; window.addEventListener('keydown', esc); return () => window.removeEventListener('keydown', esc); }, []);
@@ -136,6 +138,20 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
   const [cards, setCards] = useState<GrooveMeta[]>([]);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // carry the in-progress loop across the OAuth full-page redirect, restore on return
+  const signInPreserving = async () => {
+    try { if (looper.layers.length > 0) sessionStorage.setItem(PENDING_KEY, JSON.stringify(await looper.snapshotSession())); } catch { /* ignore */ }
+    await signIn();
+  };
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (!ready || restoredRef.current) return;
+    const raw = sessionStorage.getItem(PENDING_KEY);
+    if (!raw) return;
+    restoredRef.current = true;
+    sessionStorage.removeItem(PENDING_KEY);
+    try { looper.loadSession(JSON.parse(raw) as Session); force(); } catch { /* ignore */ }
+  }, [ready]);
   const localCards = (): GrooveMeta[] => readSaves().map((s) => ({
     id: String(s.id), name: s.name, keyRoot: s.session.keyRoot, scaleId: s.session.scaleId,
     bpm: s.session.bpm, bars: s.session.bars, quantize: s.session.quantize, layerCount: s.session.layers.length, updatedAt: '',
@@ -150,7 +166,7 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
 
   const nextName = () => 'Groove ' + (cards.length + 1);
   const doSave = async () => {
-    if (enabled && !user) { void signIn(); return; }             // saving requires sign-in
+    if (enabled && !user) { void signInPreserving(); return; }    // saving requires sign-in
     setBusy(true);
     try {
       const session = await looper.snapshotSession();
@@ -202,6 +218,7 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
   const [dl, setDl] = useState(false);
   const doDownload = async () => {
     if (dl || looper.layers.length === 0) return;
+    if (enabled && !user) { void signInPreserving(); return; }    // download requires sign-in too
     setDl(true);
     try {
       const blob = await looper.exportWav(4);
@@ -247,7 +264,7 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
           */}
         </div>
         <div className="sr-top-end">
-          <button className={'sr-orb' + (dl ? ' busy' : '')} disabled={looper.layers.length === 0 || dl} onClick={doDownload} title="download groove (.wav)" aria-label="download">
+          <button className={'sr-orb' + (dl ? ' busy' : '')} disabled={looper.layers.length === 0 || dl} onClick={doDownload} title={enabled && !user ? 'sign in to download' : 'download groove (.wav)'} aria-label="download">
             {dl ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="spin"><path d="M21 12a9 9 0 1 1-6.2-8.5" /></svg>
               : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 3v12M7 11l5 5 5-5M5 21h14" /></svg>}
           </button>
@@ -266,7 +283,7 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
               <span className="ini">{(user.email ?? '?').charAt(0).toUpperCase()}</span>
             </button>
           ) : (
-            <button className="sr-orb" onClick={() => void signIn()} title="sign in with Google" aria-label="sign in">
+            <button className="sr-orb" onClick={() => void signInPreserving()} title="sign in with Google" aria-label="sign in">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></svg>
             </button>
           ))}
@@ -399,7 +416,7 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
                   <div className="sr-empty">
                     <span className="ei">✦</span><b>Sign in to save</b>
                     <p>Your grooves live in your account. Sign in with Google to save them and pick up on any device.</p>
-                    <button className="groovebtn signin" onClick={() => void signIn()}>
+                    <button className="groovebtn signin" onClick={() => void signInPreserving()}>
                       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 11v2h5.6c-.3 1.4-1.6 4-5.6 4a5 5 0 1 1 0-10c1.5 0 2.8.6 3.6 1.3l1.7-1.7A7.5 7.5 0 1 0 12 20c4.3 0 7.2-3 7.2-7.3 0-.5 0-.9-.1-1.2H12z" /></svg>
                       <span>Continue with Google</span>
                     </button>
