@@ -13,8 +13,8 @@ const HUE = '#9B8CFF';
 
 interface Save { id: number; name: string; session: Session }
 const SAVES_KEY = 'riyaaz.looper.saves';
-// carries the in-progress loop across the Google OAuth full-page redirect
-const PENDING_KEY = 'aurora.pending.session';
+// the in-progress loop, autosaved locally — survives ANY reload + the OAuth redirect
+const WORKING_KEY = 'aurora.working.session';
 const readSaves = (): Save[] => { try { return JSON.parse(localStorage.getItem(SAVES_KEY) || '[]'); } catch { return []; } };
 const writeSaves = (a: Save[]) => localStorage.setItem(SAVES_KEY, JSON.stringify(a));
 // voice PCM is heavy — if the store overflows, retry without the voice audio.
@@ -138,20 +138,32 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
   const [cards, setCards] = useState<GrooveMeta[]>([]);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // carry the in-progress loop across the OAuth full-page redirect, restore on return
-  const signInPreserving = async () => {
-    try { if (looper.layers.length > 0) sessionStorage.setItem(PENDING_KEY, JSON.stringify(await looper.snapshotSession())); } catch { /* ignore */ }
-    await signIn();
+  // ── keep the in-progress loop alive across ANY reload / the OAuth redirect ──
+  // captured ONCE at mount, before autosave can overwrite it
+  const [bootSession] = useState<Session | null>(() => {
+    try { const raw = localStorage.getItem(WORKING_KEY); if (raw) { const s = JSON.parse(raw) as Session; return s.layers?.length ? s : null; } } catch { /* ignore */ }
+    return null;
+  });
+  const saveWorking = async () => {
+    try {
+      const s = await looper.snapshotSession();
+      try { localStorage.setItem(WORKING_KEY, JSON.stringify(s)); }
+      catch { try { localStorage.setItem(WORKING_KEY, JSON.stringify({ ...s, layers: s.layers.filter((l) => l.kind !== 'voice') })); } catch { /* out of room */ } }
+    } catch { /* ignore */ }
   };
+  const signInPreserving = async () => { await saveWorking(); await signIn(); };
   const restoredRef = useRef(false);
+  // restore the working loop once the engine is ready
   useEffect(() => {
     if (!ready || restoredRef.current) return;
-    const raw = sessionStorage.getItem(PENDING_KEY);
-    if (!raw) return;
     restoredRef.current = true;
-    sessionStorage.removeItem(PENDING_KEY);
-    try { looper.loadSession(JSON.parse(raw) as Session); force(); } catch { /* ignore */ }
+    if (bootSession) { try { looper.loadSession(bootSession); force(); } catch { /* ignore */ } }
   }, [ready]);
+  // autosave the working loop whenever it changes (only after the initial restore)
+  useEffect(() => {
+    if (!ready || !restoredRef.current) return;
+    void saveWorking();
+  }, [looper.layers.length, ready]);
   const localCards = (): GrooveMeta[] => readSaves().map((s) => ({
     id: String(s.id), name: s.name, keyRoot: s.session.keyRoot, scaleId: s.session.scaleId,
     bpm: s.session.bpm, bars: s.session.bars, quantize: s.session.quantize, layerCount: s.session.layers.length, updatedAt: '',
