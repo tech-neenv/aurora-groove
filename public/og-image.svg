@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
-    <linearGradient id="aurora" x1="120" y1="470" x2="1080" y2="140" gradientUnits="userSpaceOnUse">
+    <linearGradient id="ribbon" x1="120" y1="470" x2="1080" y2="140" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#3fe0a6"/><stop offset=".5" stop-color="#49a6ea"/><stop offset="1" stop-color="#b48cff"/>
     </linearGradient>
-    <!-- horizontal gradient spanning the wordmark: logo palette green -> blue -> purple -->
-    <linearGradient id="auroraText" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#3fe0a6"/><stop offset=".5" stop-color="#5fb0f0"/><stop offset="1" stop-color="#b48cff"/>
+    <!-- wordmark gradient, mirrors the site's .wm b (only "Aurora" uses it) -->
+    <linearGradient id="wm" x1="222" y1="0" x2="548" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6fe6bf"/><stop offset=".45" stop-color="#6fb0f0"/><stop offset="1" stop-color="#b48cff"/>
     </linearGradient>
     <radialGradient id="glowA" cx="18%" cy="14%" r="60%">
-      <stop offset="0" stop-color="#3fe0a6" stop-opacity=".18"/><stop offset="1" stop-color="#3fe0a6" stop-opacity="0"/>
+      <stop offset="0" stop-color="#3fe0a6" stop-opacity=".16"/><stop offset="1" stop-color="#3fe0a6" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="glowB" cx="88%" cy="90%" r="60%">
-      <stop offset="0" stop-color="#b48cff" stop-opacity=".20"/><stop offset="1" stop-color="#b48cff" stop-opacity="0"/>
+      <stop offset="0" stop-color="#b48cff" stop-opacity=".18"/><stop offset="1" stop-color="#b48cff" stop-opacity="0"/>
     </radialGradient>
   </defs>
 
@@ -19,16 +19,28 @@
   <rect width="1200" height="630" fill="url(#glowA)"/>
   <rect width="1200" height="630" fill="url(#glowB)"/>
 
-  <!-- aurora ribbon (favicon motif, scaled up) -->
+  <!-- background aurora ribbon motif, dialed back so the lockup is the hero -->
   <path d="M120 430 C 300 150, 480 165, 560 400 C 620 585, 850 600, 1080 210"
-        fill="none" stroke="url(#aurora)" stroke-width="18" stroke-linecap="round" opacity=".85"/>
+        fill="none" stroke="url(#ribbon)" stroke-width="16" stroke-linecap="round" opacity=".55"/>
   <path d="M150 505 C 330 260, 520 275, 600 470 C 650 605, 870 605, 1050 400"
-        fill="none" stroke="url(#aurora)" stroke-width="10" stroke-linecap="round" opacity=".4"/>
+        fill="none" stroke="url(#ribbon)" stroke-width="9" stroke-linecap="round" opacity=".28"/>
 
-  <!-- wordmark: logo palette gradient -->
-  <text x="96" y="300" font-family="'Bricolage Grotesque', 'Segoe UI', Helvetica, Arial, sans-serif"
-        font-size="104" font-weight="700" fill="url(#auroraText)" letter-spacing="-2">Aurora Groove</text>
+  <!-- brand lockup: icon + wordmark, exactly like the website nav -->
+  <svg x="96" y="232" width="104" height="104" viewBox="0 0 44 44">
+    <defs>
+      <linearGradient id="ico" x1="4" y1="40" x2="40" y2="6" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#3fe0a6"/><stop offset=".5" stop-color="#49a6ea"/><stop offset="1" stop-color="#b48cff"/>
+      </linearGradient>
+    </defs>
+    <rect width="44" height="44" rx="11" fill="#0a0818"/>
+    <path d="M6 29 C 13 12, 20 13, 23 23 C 25 31, 32 32, 38 15" fill="none" stroke="url(#ico)" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M8 35 C 15 21, 22 22, 25 30 C 27 36, 33 36, 38 26" fill="none" stroke="url(#ico)" stroke-width="2.4" stroke-linecap="round" opacity=".6"/>
+  </svg>
+
+  <text x="222" y="316" font-family="'Bricolage Grotesque', 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="92" font-weight="700" letter-spacing="-2"><tspan fill="url(#wm)">Aurora</tspan><tspan fill="#ffffff" dx="26">Groove</tspan></text>
+
   <!-- subtext: white -->
-  <text x="100" y="372" font-family="'Bricolage Grotesque', 'Segoe UI', Helvetica, Arial, sans-serif"
-        font-size="44" font-weight="500" fill="#ffffff">Make Your Own Music</text>
+  <text x="100" y="406" font-family="'Bricolage Grotesque', 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="42" font-weight="500" fill="#ffffff">Make Your Own Music</text>
 </svg>
