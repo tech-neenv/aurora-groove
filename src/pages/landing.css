@@ -2,8 +2,8 @@
 .lz{
   --bg:#05040c; --txt:#f4f1ff; --dim:rgba(233,228,255,.68); --faint:rgba(233,228,255,.42);
   --glass:rgba(150,138,220,.09); --brd:rgba(184,172,255,.18);
-  position:relative; min-height:100vh; width:100%; color:var(--txt);
-  font-family:'Bricolage Grotesque', system-ui, sans-serif; overflow-x:hidden; -webkit-font-smoothing:antialiased;
+  position:relative; width:100%; color:var(--txt);
+  font-family:'Bricolage Grotesque', system-ui, sans-serif; -webkit-font-smoothing:antialiased;
   background:
     radial-gradient(90% 55% at 15% 6%, color-mix(in srgb,#3fe0a6 7%,transparent), transparent 60%),
     radial-gradient(80% 50% at 92% 26%, color-mix(in srgb,var(--hue) 11%,transparent), transparent 62%),
