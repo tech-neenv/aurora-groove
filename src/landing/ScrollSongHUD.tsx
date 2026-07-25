@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { scroll } from './scroll';
 import { scrollSong, STEM_LABELS } from './scrollSong';
 
-// Fixed layer-stack + sound gate. The song fades its five stems in as you scroll
-// (drums → bass → chords → topline → FX); this HUD is the readout: each column
-// lights + jumps to the live level when its stem is audible. Smooth-scroll and
-// the scroll→gain binding live in useCinema — this only reads state.
+// Fixed layer-stack + sound gate. The song fades its ten stems in as you scroll
+// (kick → sub → hats → clap → bass → chords → arp → lead → bells → FX); this HUD
+// is the readout: each column lights + jumps to the live level when its stem is
+// audible. Smooth-scroll and the scroll→gain binding live in useCinema — this
+// only reads state.
 export default function ScrollSongHUD() {
   const [on, setOn] = useState(false);
   const [hint, setHint] = useState(true);

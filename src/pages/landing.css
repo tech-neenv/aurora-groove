@@ -1,6 +1,6 @@
 /* Aurora Groove — landing. Kinetic type on a deep aurora night. */
 .lz{
-  --bg:#05040c; --txt:#f4f1ff; --dim:rgba(233,228,255,.68); --faint:rgba(233,228,255,.42);
+  --bg:#05040c; --txt:#f7f5ff; --dim:rgba(236,231,255,.84); --faint:rgba(236,231,255,.6);
   --glass:rgba(150,138,220,.09); --brd:rgba(184,172,255,.18);
   position:relative; width:100%; color:var(--txt);
   font-family:'Bricolage Grotesque', system-ui, sans-serif; -webkit-font-smoothing:antialiased;
@@ -48,7 +48,19 @@
 .lz-h1 .line:nth-child(2) > *{animation-delay:.09s}
 @keyframes lzRise{from{transform:translateY(104%)}to{transform:none}}
 .lz-h1 em{font-style:italic; font-weight:500; color:var(--dim)}
-.grad{background:linear-gradient(100deg,#5fe6bf,#5fb0f0 42%,var(--hue) 84%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
+.grad{background:linear-gradient(100deg,#5fe6bf,#5fb0f0 42%,var(--hue) 84%,#5fe6bf 120%); background-size:220% auto;
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation:gradFlow 7s ease-in-out infinite}
+@keyframes gradFlow{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@media(prefers-reduced-motion:reduce){ .grad{animation:none} }
+
+/* ── motion layer: card tilt + cursor spotlight + scroll parallax ───────── */
+.has-tilt{position:relative; transition:transform .3s cubic-bezier(.2,.7,.2,1); transform-style:preserve-3d; will-change:transform}
+.has-tilt::after{content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:3;
+  background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%), rgba(159,140,255,.16), transparent 55%);
+  opacity:0; transition:opacity .3s}
+.has-tilt:hover::after{opacity:1}
+[data-parallax]{transform:translateY(var(--py,0)); will-change:transform}
+@media(prefers-reduced-motion:reduce){ [data-parallax]{transform:none} }
 .lz-sub{max-width:560px; font-size:clamp(1.05rem,2vw,1.3rem); line-height:1.5; color:var(--dim); margin:0}
 .lz-cta{display:flex; align-items:center; gap:18px; flex-wrap:wrap}
 .lz-hint{font-size:.9rem; color:var(--faint)}
@@ -233,7 +245,7 @@
 .lz-hero::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none; mix-blend-mode:screen;
   background:radial-gradient(52% 42% at 22% 58%, color-mix(in srgb,#3fe0a6 34%,transparent), transparent 70%),
              radial-gradient(48% 40% at 82% 40%, color-mix(in srgb,var(--hue) 34%,transparent), transparent 72%);
-  opacity:calc(var(--agr-level,0) * .6); transition:opacity .1s linear}
+  opacity:calc(var(--agr-level,0) * .3); transition:opacity .1s linear}
 
 /* ── layered-song HUD (fixed, bottom-centre) ─────────────────────────── */
 .agr-hud{position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:40;
@@ -248,16 +260,16 @@
   box-shadow:0 0 22px -6px var(--hue)}
 @keyframes agrPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--hue) 42%,transparent)}50%{box-shadow:0 0 0 9px transparent}}
 
-.agr-stack{pointer-events:auto; display:flex; align-items:flex-end; gap:9px; padding:9px 14px 7px; border-radius:16px;
+.agr-stack{pointer-events:auto; display:flex; align-items:flex-end; gap:7px; padding:9px 13px 7px; border-radius:16px;
   background:var(--glass); border:1px solid var(--brd); backdrop-filter:blur(14px)}
-.agr-col{width:26px; height:38px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+.agr-col{width:22px; height:38px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
   opacity:.4; transition:opacity .3s}
 .agr-col.on{opacity:1}
 .agr-bar{width:100%; height:calc(6px + var(--h,.06) * 30px); border-radius:5px;
   background:rgba(233,228,255,.18); transition:height .09s linear}
 .agr-col.on .agr-bar{background:linear-gradient(180deg,#6fe6bf,#6fb0f0 50%,var(--hue));
   box-shadow:0 0 12px -2px color-mix(in srgb,var(--hue) 70%,transparent)}
-.agr-lab{margin-top:5px; font-size:6.5px; line-height:1; letter-spacing:.06em; font-weight:700; color:var(--faint)}
+.agr-lab{margin-top:5px; font-size:6px; line-height:1; letter-spacing:.03em; font-weight:700; color:var(--faint); white-space:nowrap}
 .agr-col.on .agr-lab{color:var(--dim)}
 
 .agr-tip{position:absolute; bottom:64px; left:50%; transform:translateX(-50%) translateY(6px); white-space:nowrap;
@@ -267,9 +279,9 @@
 .agr-tip.show{opacity:1; transform:translateX(-50%) translateY(0)}
 
 @media(max-width:560px){
-  .agr-hud{bottom:12px; gap:9px}
-  .agr-stack{gap:6px; padding:8px 10px 6px}
-  .agr-col{width:16px; height:32px}
+  .agr-hud{bottom:12px; gap:8px}
+  .agr-stack{gap:4px; padding:7px 9px 6px}
+  .agr-col{width:12px; height:30px}
   .agr-lab{display:none}
 }
 @media(prefers-reduced-motion:reduce){ .agr-gate:not(.on){animation:none} }
@@ -279,7 +291,11 @@
 .lz-cinema{position:fixed; inset:0; width:100%; height:100%; z-index:0; display:block; pointer-events:none}
 /* dark veil over the canvas so all copy stays legible no matter the scene */
 .lz-scrim{position:fixed; inset:0; z-index:0; pointer-events:none;
-  background:linear-gradient(180deg, rgba(6,5,16,.62), rgba(6,5,16,.46) 42%, rgba(6,5,16,.66))}
+  background:linear-gradient(180deg, rgba(6,5,16,.74), rgba(6,5,16,.6) 42%, rgba(6,5,16,.8))}
+/* progressive dimmer — the further you scroll, the darker the WebGL, so copy in
+   the content sections always stays readable (hero keeps its full brightness) */
+.lz-dim{position:fixed; inset:0; z-index:0; pointer-events:none; background:#05040c;
+  opacity:calc(var(--agr-progress,0) * .55)}
 /* lift every content block above the canvas (fixed UI keeps its own z) */
 .lz-hero,.lz-marquee,.lz-sec,.lz-specs,.lz-foot{position:relative; z-index:1}
 

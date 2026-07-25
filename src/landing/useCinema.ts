@@ -30,11 +30,13 @@ export function useCinema() {
     };
     window.addEventListener('pointermove', onMove, { passive: true });
 
-    // volume on by default: browsers block bare autoplay, so kick the song off
-    // on the very first user gesture (pointer / key / wheel / touch).
+    // volume on by default: browsers (esp. mobile Safari/Chrome) block bare
+    // autoplay, so kick the song off on the very FIRST user gesture of any kind.
+    // Broad event net + resume-inside-gesture makes it reliable on touch devices.
+    const GEST = ['pointerdown', 'pointerup', 'click', 'touchstart', 'touchend', 'keydown', 'wheel'];
     const kick = () => { void scrollSong.start(); off(); };
-    const off = () => ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach((ev) => window.removeEventListener(ev, kick));
-    ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach((ev) => window.addEventListener(ev, kick, { passive: true, once: false }));
+    const off = () => GEST.forEach((ev) => window.removeEventListener(ev, kick));
+    GEST.forEach((ev) => window.addEventListener(ev, kick, { passive: true }));
     void scrollSong.start(); // try immediately too (works where autoplay is allowed)
 
     const winProgress = () => {

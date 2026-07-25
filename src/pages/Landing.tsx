@@ -4,6 +4,7 @@ import { engine } from '../audio/engine';
 import CinemaScene from '../landing/CinemaScene';
 import ScrollSongHUD from '../landing/ScrollSongHUD';
 import { useCinema } from '../landing/useCinema';
+import { useLandingMotion } from '../landing/motion';
 import { GROOVES, playGroove, type Groove, type GrooveHandle } from '../landing/grooveKit';
 import './landing.css';
 
@@ -131,6 +132,7 @@ function StudioPreview() {
 export default function Landing() {
   const nav = useNavigate();
   useCinema();
+  useLandingMotion();
   const [pulse, setPulse] = useState(0);
   const [playing, setPlaying] = useState('');
   const [grvActive, setGrvActive] = useState<boolean[]>([]);
@@ -152,6 +154,8 @@ export default function Landing() {
       {/* cinematic WebGL backdrop — dives the corridor as you scroll */}
       <CinemaScene />
       <div className="lz-scrim" aria-hidden="true" />
+      {/* progressive dimmer — darkens the WebGL as you scroll so copy stays legible */}
+      <div className="lz-dim" aria-hidden="true" />
       {/* page-load intro curtain (animates away on its own) */}
       <div className="lz-intro" aria-hidden="true"><span className="lz-introwm"><b>Aurora</b> Groove</span></div>
       {/* scroll-progress bar + the layered-song HUD */}
@@ -181,10 +185,10 @@ export default function Landing() {
           <div className="lz-heroin">
             <span className="lz-eyebrow">browser loop station · no install</span>
             <h1 className="lz-h1">
-              <span className="line"><em>Anyone</em> can</span>
-              <span className="line">make <span className="grad">music.</span></span>
+              <span className="line">Make your <em>own</em></span>
+              <span className="line"><span className="grad">music.</span></span>
             </h1>
-            <p className="lz-sub">Every key is already in tune. Play instruments, sing into the mic, stack loops — a groove in minutes. No lessons. No wrong notes.</p>
+            <p className="lz-sub">Every key is already in tune. Play, sing, stack loops — a track in minutes. No wrong notes.</p>
             <div className="lz-cta">
               <button className="lz-btn solid big" onClick={openStudio}>Open Studio →</button>
               <span className="lz-hint">↓ or press a key right here</span>
@@ -209,7 +213,7 @@ export default function Landing() {
         <Reveal>
           <span className="lz-kicker">live · press play — layers stack in</span>
           <h2 className="lz-h2">Grooves you feel — <span className="grad">stacked live.</span></h2>
-          <p className="lz-sub">Not one-finger tunes — full arrangements in the styles you already love. Hit play and the layers pile on, one per bar: drums, bass, chords, arp, pad, lead — up to eight deep. Same engine that powers the studio.</p>
+          <p className="lz-sub">Not one-finger tunes — full arrangements. Hit play and the layers stack in, one per bar.</p>
         </Reveal>
         <div className="lz-melgrid">
           {GROOVES.map((g, i) => (
@@ -250,8 +254,8 @@ export default function Landing() {
       {/* statement */}
       <section className="lz-sec lz-state">
         <Reveal>
-          <h2 className="lz-big">There are<br /><span className="grad">no wrong notes.</span></h2>
-          <p className="lz-statesub">Choose a key and a scale once. From then on, every key on the board is a note that fits — so whatever you play sounds intentional. The fastest way from "I can't play" to "I made this."</p>
+          <h2 className="lz-big" data-parallax="0.05">There are<br /><span className="grad">no wrong notes.</span></h2>
+          <p className="lz-statesub">Choose a key once. From then on, every note fits — whatever you play sounds intentional.</p>
           <button className="lz-btn ghost big" onClick={openStudio}>Try it — it's free →</button>
         </Reveal>
       </section>
@@ -315,7 +319,7 @@ export default function Landing() {
       {/* final CTA */}
       <section className="lz-sec lz-final">
         <Reveal>
-          <h2 className="lz-big center">Your first track is<br /><span className="grad">one keypress away.</span></h2>
+          <h2 className="lz-big center" data-parallax="0.05">Your first track is<br /><span className="grad">one keypress away.</span></h2>
           <button className="lz-btn solid big" onClick={openStudio}>Open Studio →</button>
           <span className="lz-freenote">free · no install · works in your browser</span>
         </Reveal>
