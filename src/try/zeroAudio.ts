@@ -81,6 +81,13 @@ class ZeroAudio {
     this.variant[layer] = v; this.on[layer] = true;
     if (this.ctx) this.stems[layer].gain.setTargetAtTime(0.85, this.ctx.currentTime, 0.15);
   }
+  // scrub a layer on/off (for the merge concept — reversible with scroll)
+  setLayer(layer: LayerIndex, on: boolean) {
+    if (on) void this.start();
+    this.on[layer] = on;
+    if (this.ctx) this.stems[layer].gain.setTargetAtTime(on ? 0.85 : 0.0001, this.ctx.currentTime, 0.12);
+  }
+  reset() { this.on = [false, false, false, false, false, false, false, false]; if (this.ctx) for (const s of this.stems) s.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.05); }
   isOn(layer: number) { return this.on[layer]; }
 
   private loop = () => {

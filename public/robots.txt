@@ -1,0 +1,6 @@
+# Aurora Groove — allow all crawlers, block the auth callback from indexing.
+User-agent: *
+Allow: /
+Disallow: /auth/
+
+Sitemap: https://auroragroove.com/sitemap.xml
