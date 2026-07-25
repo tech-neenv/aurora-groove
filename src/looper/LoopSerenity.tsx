@@ -11,22 +11,11 @@ import './serenity.css';
 // breathing liquid glass, save/replay of sessions.
 const HUE = '#9B8CFF';
 
-interface Save { id: number; name: string; session: Session }
-const SAVES_KEY = 'riyaaz.looper.saves';
-// the in-progress loop, autosaved locally — survives ANY reload + the OAuth redirect
+// the in-progress loop (the "Stage"), autosaved locally — survives ANY reload + the OAuth redirect.
+// This is the working loop only; the durable shelf (My Grooves) is cloud-only, sign-in required.
 const WORKING_KEY = 'aurora.working.session';
-// a cloud groove id is a uuid; anything else (a stale local id) → treat as unsaved
+// a cloud groove id is a uuid; anything else → treat as unsaved
 const asCloudId = (id: string | null): string | undefined => (id && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id) ? id : undefined);
-const readSaves = (): Save[] => { try { return JSON.parse(localStorage.getItem(SAVES_KEY) || '[]'); } catch { return []; } };
-const writeSaves = (a: Save[]) => localStorage.setItem(SAVES_KEY, JSON.stringify(a));
-// voice PCM is heavy — if the store overflows, retry without the voice audio.
-const persistSaves = (a: Save[]) => {
-  try { writeSaves(a); }
-  catch {
-    try { writeSaves(a.map((s) => ({ ...s, session: { ...s.session, layers: s.session.layers.filter((l) => l.kind !== 'voice') } }))); }
-    catch { /* out of room — keep the newest in memory only */ }
-  }
-};
 
 // a thin, smooth, curvy "hotspot" line (like cricket Hawk-Eye) — flat where quiet,
 // sharp mirrored peaks where there's a note. Built from a 0..1 peak envelope.
@@ -141,6 +130,12 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [acctOpen, setAcctOpen] = useState(false);
+  const acctRef = useRef<HTMLButtonElement>(null);
+  const [acctPos, setAcctPos] = useState({ top: 0, right: 0 });
+  const toggleAcct = () => {
+    if (!acctOpen && acctRef.current) { const r = acctRef.current.getBoundingClientRect(); setAcctPos({ top: r.bottom + 10, right: Math.max(12, window.innerWidth - r.right) }); }
+    setAcctOpen((o) => !o);
+  };
   // ── keep the in-progress loop AND which saved groove it maps to alive across ──
   // any reload / the OAuth redirect. Captured ONCE at mount, before autosave runs.
   const [boot] = useState<{ session: Session; savedId: string | null } | null>(() => {
@@ -168,67 +163,51 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
     if (!ready || !restoredRef.current) return;
     void saveWorking();
   }, [looper.layers.length, savedId, ready]);
-  const localCards = (): GrooveMeta[] => readSaves().map((s) => ({
-    id: String(s.id), name: s.name, keyRoot: s.session.keyRoot, scaleId: s.session.scaleId,
-    bpm: s.session.bpm, bars: s.session.bars, quantize: s.session.quantize, layerCount: s.session.layers.length, updatedAt: '',
-  }));
   const refreshSaves = async () => {
     if (cloud) { try { setCards(await listGrooves()); } catch { setCards([]); } }
-    else if (!enabled) setCards(localCards());
-    else setCards([]);   // signed out while cloud is on → nothing until sign-in
+    else setCards([]);   // signed out → nothing until sign-in (saving is cloud-only)
   };
   useEffect(() => { void refreshSaves(); }, [cloud]);
   useEffect(() => { if (showKeys) { setPanel('keys'); setShowKeys(false); } }, [showKeys]);
 
   const nextName = () => 'Groove ' + (cards.length + 1);
-  // put the Stage on the shelf. existing = update that groove; undefined = new groove.
+  // put the Stage on the cloud shelf. existing = update that groove; undefined = new.
   const putGroove = async (existing?: string) => {
+    if (!cloud) return;
     setBusy(true);
-    try {
-      const session = await looper.snapshotSession();
-      if (cloud) { setSavedId(await saveGroove(session, cards.find((c) => c.id === existing)?.name ?? nextName(), existing)); await refreshSaves(); }
-      else { const all = readSaves(); if (existing) { const i = all.findIndex((s) => String(s.id) === existing); if (i >= 0) all[i].session = session; } else { const id = Date.now(); all.push({ id, name: nextName(), session }); setSavedId(String(id)); } persistSaves(all); setCards(localCards()); }
-    } finally { setBusy(false); }
+    try { setSavedId(await saveGroove(await looper.snapshotSession(), cards.find((c) => c.id === existing)?.name ?? nextName(), existing)); await refreshSaves(); }
+    finally { setBusy(false); }
   };
   // Save = keep the Stage on your shelf. Requires sign-in. First save creates +
   // links the groove; after that it auto-keeps-in-sync, so a 2nd press is a no-op.
   const doSave = async () => {
     if (looper.layers.length === 0 || busy) return;
-    if (enabled && !user) { void signInPreserving(); return; }   // saving requires sign-in
-    if (asCloudId(savedId)) return;                              // already saved + kept in sync
+    if (!user) { void signInPreserving(); return; }   // saving requires sign-in
+    if (asCloudId(savedId)) return;                    // already saved + kept in sync
     await putGroove();
   };
-  // Duplicate = fork a fresh copy of the Stage (no existing id → new groove).
-  const doDuplicate = async () => {
-    if (looper.layers.length === 0 || busy) return;
-    if (enabled && !user) { void signInPreserving(); return; }
-    await putGroove();
-  };
-  // auto keep-in-sync: a linked (saved) Stage rewrites its groove as the loop changes
+  // auto keep-in-sync: a linked (saved) Stage rewrites its cloud groove as it changes
   useEffect(() => {
     const cid = asCloudId(savedId);
-    if (savedId == null || (cloud && !cid)) return;
+    if (!cloud || !cid) return;
     let alive = true;
     void looper.snapshotSession().then(async (session) => {
       if (!alive) return;
-      if (cloud && cid) { await saveGroove(session, cards.find((c) => c.id === cid)?.name ?? nextName(), cid); await refreshSaves(); }
-      else if (!enabled) { const all = readSaves(); const i = all.findIndex((s) => String(s.id) === savedId); if (i >= 0) { all[i].session = session; persistSaves(all); setCards(localCards()); } }
+      await saveGroove(session, cards.find((c) => c.id === cid)?.name ?? nextName(), cid); await refreshSaves();
     });
     return () => { alive = false; };
   }, [looper.layers.length, savedId]);
 
   const delSave = async (id: string) => {
-    if (cloud) await deleteGroove(id); else writeSaves(readSaves().filter((s) => String(s.id) !== id));
+    if (cloud) await deleteGroove(id);
     if (savedId === id) setSavedId(null);
     await refreshSaves();
   };
   const playSave = async (id: string) => {
+    if (!cloud) return;
     setBusy(true);
-    try {
-      if (cloud) { looper.loadSession(await loadGroove(id)); }
-      else { const s = readSaves().find((x) => String(x.id) === id); if (s) looper.loadSession(s.session); }
-      setSavedId(id); setPanel(null); force();
-    } finally { setBusy(false); }
+    try { looper.loadSession(await loadGroove(id)); setSavedId(id); setPanel(null); force(); }
+    finally { setBusy(false); }
   };
   // New = start a blank Stage. Un-kept work → guard first; kept/empty → clear now.
   const [newGuard, setNewGuard] = useState(false);
@@ -269,12 +248,16 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
       <header className="sr-top sr-rise" style={{ ['--d' as string]: 0 }}>
         <div className="sr-brand">
           <svg className="sr-logo" viewBox="0 0 44 44" aria-hidden="true">
-            <circle cx="22" cy="22" r="14" fill="none" stroke="currentColor" strokeWidth="2" opacity=".45" />
-            <circle cx="22" cy="22" r="8" fill="none" stroke="currentColor" strokeWidth="1.4" opacity=".28" />
-            <g className="node"><circle cx="22" cy="8" r="3.4" fill="currentColor" /></g>
-            <circle cx="22" cy="22" r="1.6" fill="currentColor" opacity=".8" />
+            <defs>
+              <linearGradient id="agrad" x1="4" y1="40" x2="40" y2="6" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stopColor="#3fe0a6" /><stop offset=".5" stopColor="#49a6ea" /><stop offset="1" stopColor="#b48cff" />
+              </linearGradient>
+            </defs>
+            <path d="M6 29 C 13 12, 20 13, 23 23 C 25 31, 32 32, 38 15" fill="none" stroke="url(#agrad)" strokeWidth="3.4" strokeLinecap="round" />
+            <path d="M8 35 C 15 21, 22 22, 25 30 C 27 36, 33 36, 38 26" fill="none" stroke="url(#agrad)" strokeWidth="2.2" strokeLinecap="round" opacity=".55" />
+            <circle cx="33" cy="9" r="1.5" fill="#fff" opacity=".85" />
           </svg>
-          <span className="wm">loop<em>station</em></span>
+          <span className="wm"><b>Aurora</b><em> Groove</em></span>
         </div>
         <div className={'sr-top-ctl' + (locked ? ' frozen' : '')}>
           <button className={'sr-glass chip' + (locked ? ' locked' : '')} disabled={locked} onClick={() => { looper.setKey((looper.keyRoot + 1) % 12); force(); }}><span className="v">{KEYS[looper.keyRoot]}</span><span className="k">key</span></button>
@@ -290,9 +273,6 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
           */}
         </div>
         <div className="sr-top-end">
-          <button className="sr-orb" onClick={doNew} title="new groove" aria-label="new groove">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 5v14M5 12h14" /></svg>
-          </button>
           <button className={'sr-orb' + (dl ? ' busy' : '')} disabled={looper.layers.length === 0 || dl} onClick={doDownload} title={enabled && !user ? 'sign in to download' : 'download groove (.wav)'} aria-label="download">
             {dl ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="spin"><path d="M21 12a9 9 0 1 1-6.2-8.5" /></svg>
               : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 3v12M7 11l5 5 5-5M5 21h14" /></svg>}
@@ -302,39 +282,29 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
             {busy ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="spin"><path d="M21 12a9 9 0 1 1-6.2-8.5" /></svg>
               : <svg viewBox="0 0 24 24" fill={savedId != null ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.7"><path d="M12 21s-7.5-4.6-10-9.2C.4 8.5 1.9 4.9 5.3 4.5 7.5 4.2 9.2 5.4 12 8.2c2.8-2.8 4.5-4 6.7-3.7 3.4.4 4.9 4 3.3 7.3C19.5 16.4 12 21 12 21z" /></svg>}
           </button>
-          {savedId != null && (
-            <button className="sr-orb" disabled={busy} onClick={doDuplicate} title="duplicate — save a copy" aria-label="duplicate">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
-            </button>
-          )}
           <button className="sr-orb" onClick={() => { void refreshSaves(); setPanel('saves'); }} title="my grooves" aria-label="my grooves">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 3l9 5-9 5-9-5 9-5z" /><path d="M3 12l9 5 9-5M3 16.5l9 5 9-5" /></svg>
-          </button>
-          <button className="sr-orb" onClick={() => setPanel('keys')} title="learn to groove" aria-label="learn to groove">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M5 3v4M3 5h4M6 17v3M4.5 18.5h3" /><path d="M15 4l2.4 5.6L23 12l-5.6 2.4L15 20l-2.4-5.6L7 12l5.6-2.4L15 4z" /></svg>
           </button>
           {enabled && (user ? (() => {
             const meta = (user.user_metadata ?? {}) as Record<string, string>;
             const avatar = meta.avatar_url || meta.picture || '';
             const name = meta.full_name || meta.name || user.email || 'You';
             const ini = (name || '?').charAt(0).toUpperCase();
-            return (
-              <div className="sr-acct-wrap">
-                <button className={'sr-orb acct' + (acctOpen ? ' open' : '')} onClick={() => setAcctOpen((o) => !o)} title="account" aria-label="account">
-                  {avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : <span className="ini">{ini}</span>}
-                </button>
-                {acctOpen && (<>
-                  <div className="sr-acct-scrim" onClick={() => setAcctOpen(false)} />
-                  <div className="sr-acct-menu">
-                    <div className="am-head">
-                      {avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : <span className="am-ini">{ini}</span>}
-                      <div className="am-id"><b>{name}</b><span>{user.email}</span></div>
-                    </div>
-                    <button className="am-out" onClick={() => { setAcctOpen(false); void signOut(); }}>Log out</button>
+            return (<>
+              <button ref={acctRef} className={'sr-orb acct' + (acctOpen ? ' open' : '')} onClick={toggleAcct} title="account" aria-label="account">
+                {avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : <span className="ini">{ini}</span>}
+              </button>
+              {acctOpen && (<>
+                <div className="sr-acct-scrim" onClick={() => setAcctOpen(false)} />
+                <div className="sr-acct-menu" style={{ top: acctPos.top, right: acctPos.right }}>
+                  <div className="am-head">
+                    {avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : <span className="am-ini">{ini}</span>}
+                    <div className="am-id"><b>{name}</b><span>{user.email}</span></div>
                   </div>
-                </>)}
-              </div>
-            );
+                  <button className="am-out" onClick={() => { setAcctOpen(false); void signOut(); }}>Log out</button>
+                </div>
+              </>)}
+            </>);
           })() : (
             <button className="sr-orb" onClick={() => void signInPreserving()} title="sign in with Google" aria-label="sign in">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></svg>
@@ -430,10 +400,18 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
           </div>
         ))}
         <div className="sr-krow recrow">
-          <button className={'sr-cap space rec-' + rec} onPointerDown={(e) => { e.preventDefault(); looper.record(); (e.currentTarget as HTMLButtonElement).blur(); }} style={{ ['--w' as string]: 13 }}><span className="reclbl">{recLabel === 'REC' || recLabel === '＋' ? 'REC' : recLabel}</span><em>space bar</em><i className="ring" /></button>
           <div className="sr-uc">
             <button className="undo" onClick={() => looper.undo()} disabled={looper.layers.length === 0}>undo</button>
             <button className="clear" onClick={() => looper.clear()} disabled={looper.layers.length === 0}>clear</button>
+          </div>
+          <button className={'sr-cap space rec-' + rec} onPointerDown={(e) => { e.preventDefault(); looper.record(); (e.currentTarget as HTMLButtonElement).blur(); }} style={{ ['--w' as string]: 13 }}><span className="reclbl">{recLabel === 'REC' || recLabel === '＋' ? 'REC' : recLabel}</span><em>space bar</em><i className="ring" /></button>
+          <div className="sr-actions">
+            <button className="sr-act" onClick={doNew} title="new groove">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 5v14M5 12h14" /></svg><span>New Groove</span>
+            </button>
+            <button className="sr-act" onClick={() => setPanel('keys')} title="how to play">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="9" /><path d="M9.2 9.3a3 3 0 0 1 5.5 1.6c0 2-2.7 2.3-2.7 4M12 17.5h.01" /></svg><span>Help</span>
+            </button>
           </div>
         </div>
       </div>
