@@ -16,7 +16,7 @@ export function useAuth() {
   }, []);
 
   const signIn = () =>
-    supabase?.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+    supabase?.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback` } });
   const signOut = () => supabase?.auth.signOut();
 
   return { user, loading, signIn, signOut, enabled: supabaseEnabled };

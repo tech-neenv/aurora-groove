@@ -246,7 +246,7 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
 
       {/* topbar */}
       <header className="sr-top sr-rise" style={{ ['--d' as string]: 0 }}>
-        <div className="sr-brand">
+        <div className="sr-brand" onClick={onExit} title="home" role="link">
           <svg className="sr-logo" viewBox="0 0 44 44" aria-hidden="true">
             <defs>
               <linearGradient id="agrad" x1="4" y1="40" x2="40" y2="6" gradientUnits="userSpaceOnUse">

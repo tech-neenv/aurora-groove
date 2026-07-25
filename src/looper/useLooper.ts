@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { engine } from '../audio/engine';
-import { looper, KEYS, SCALES, INSTRUMENTS, MIC_COLOR, PAD_KEYS, instPadCount, padLabel, keyPad, ROW_HOME, ROW_TOP } from './looper';
+import { looper, KEYS, SCALES, INSTRUMENTS, MIC_COLOR, PAD_KEYS, instPadCount, keyPad, ROW_HOME, ROW_TOP } from './looper';
 
 // Shared logic for every loop-station skin (v2/v3/v4). The audio engine is one
 // singleton; the skins only differ in how they paint it.
@@ -12,7 +12,7 @@ export const KROWS: { mod?: { label: string; w: number }; keys: string[]; tail?:
   { mod: { label: '⇪', w: 1.75 }, keys: 'asdfghjkl'.split(''), tail: [{ label: ';', w: 1 }, { label: "'", w: 1.6 }] },
   { mod: { label: '⇧', w: 2.25 }, keys: 'zxcvbnm'.split(''), tail: [{ label: ',', w: 1 }, { label: '.', w: 1 }, { label: '/', w: 1.6 }] },
 ];
-export { INSTRUMENTS, MIC_COLOR, PAD_KEYS, KEYS, SCALES, instPadCount, padLabel, keyPad, ROW_HOME, ROW_TOP };
+export { INSTRUMENTS, MIC_COLOR, PAD_KEYS, KEYS, SCALES, instPadCount, keyPad, ROW_HOME, ROW_TOP };
 
 export function useLooper() {
   const [ready, setReady] = useState(false);
