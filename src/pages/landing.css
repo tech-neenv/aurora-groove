@@ -222,3 +222,116 @@
   .lz-track{animation:none}
   .lz-wave i{animation:none; transform:scaleY(.8)}
 }
+
+/* ── scroll-progress bar ─────────────────────────────────────────────── */
+.lz-prog{position:fixed; top:0; left:0; height:2px; z-index:50; pointer-events:none;
+  width:calc(var(--agr-progress,0) * 100%);
+  background:linear-gradient(90deg,#3fe0a6,#49a6ea 52%,var(--hue));
+  box-shadow:0 0 10px color-mix(in srgb,var(--hue) 60%,transparent)}
+
+/* hero breathes with the live music level (var set on :root by the HUD) */
+.lz-hero::after{content:''; position:absolute; inset:0; z-index:1; pointer-events:none; mix-blend-mode:screen;
+  background:radial-gradient(52% 42% at 22% 58%, color-mix(in srgb,#3fe0a6 34%,transparent), transparent 70%),
+             radial-gradient(48% 40% at 82% 40%, color-mix(in srgb,var(--hue) 34%,transparent), transparent 72%);
+  opacity:calc(var(--agr-level,0) * .6); transition:opacity .1s linear}
+
+/* ── layered-song HUD (fixed, bottom-centre) ─────────────────────────── */
+.agr-hud{position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:40;
+  display:flex; align-items:flex-end; gap:12px; pointer-events:none}
+.agr-gate{pointer-events:auto; width:46px; height:46px; border-radius:50%; display:grid; place-items:center;
+  background:var(--glass); border:1px solid var(--brd); color:var(--dim); cursor:pointer; transition:.22s; backdrop-filter:blur(14px)}
+.agr-gate svg{width:22px; height:22px}
+.agr-gate:hover{color:var(--txt); border-color:var(--hue)}
+.agr-gate:not(.on){animation:agrPulse 2.6s ease-in-out infinite}
+.agr-gate.on{color:#fff; border-color:var(--hue); animation:none;
+  background:linear-gradient(100deg, color-mix(in srgb,var(--hue) 40%,transparent), color-mix(in srgb,var(--hue) 18%,transparent));
+  box-shadow:0 0 22px -6px var(--hue)}
+@keyframes agrPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--hue) 42%,transparent)}50%{box-shadow:0 0 0 9px transparent}}
+
+.agr-stack{pointer-events:auto; display:flex; align-items:flex-end; gap:9px; padding:9px 14px 7px; border-radius:16px;
+  background:var(--glass); border:1px solid var(--brd); backdrop-filter:blur(14px)}
+.agr-col{width:26px; height:38px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+  opacity:.4; transition:opacity .3s}
+.agr-col.on{opacity:1}
+.agr-bar{width:100%; height:calc(6px + var(--h,.06) * 30px); border-radius:5px;
+  background:rgba(233,228,255,.18); transition:height .09s linear}
+.agr-col.on .agr-bar{background:linear-gradient(180deg,#6fe6bf,#6fb0f0 50%,var(--hue));
+  box-shadow:0 0 12px -2px color-mix(in srgb,var(--hue) 70%,transparent)}
+.agr-lab{margin-top:5px; font-size:6.5px; line-height:1; letter-spacing:.06em; font-weight:700; color:var(--faint)}
+.agr-col.on .agr-lab{color:var(--dim)}
+
+.agr-tip{position:absolute; bottom:64px; left:50%; transform:translateX(-50%) translateY(6px); white-space:nowrap;
+  pointer-events:none; font-size:.72rem; letter-spacing:.01em; color:var(--dim);
+  background:var(--glass); border:1px solid var(--brd); padding:7px 12px; border-radius:10px; backdrop-filter:blur(10px);
+  opacity:0; transition:opacity .4s, transform .4s}
+.agr-tip.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+@media(max-width:560px){
+  .agr-hud{bottom:12px; gap:9px}
+  .agr-stack{gap:6px; padding:8px 10px 6px}
+  .agr-col{width:16px; height:32px}
+  .agr-lab{display:none}
+}
+@media(prefers-reduced-motion:reduce){ .agr-gate:not(.on){animation:none} }
+
+/* ── cinematic WebGL backdrop ────────────────────────────────────────── */
+.lz{background:transparent}                       /* let the canvas show through */
+.lz-cinema{position:fixed; inset:0; width:100%; height:100%; z-index:0; display:block; pointer-events:none}
+/* dark veil over the canvas so all copy stays legible no matter the scene */
+.lz-scrim{position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:linear-gradient(180deg, rgba(6,5,16,.62), rgba(6,5,16,.46) 42%, rgba(6,5,16,.66))}
+/* lift every content block above the canvas (fixed UI keeps its own z) */
+.lz-hero,.lz-marquee,.lz-sec,.lz-specs,.lz-foot{position:relative; z-index:1}
+
+/* ── page-load intro curtain ─────────────────────────────────────────── */
+.lz-intro{position:fixed; inset:0; z-index:60; display:grid; place-items:center; background:#05040c;
+  pointer-events:none; animation:lzIntro 1.6s cubic-bezier(.7,0,.3,1) .15s forwards}
+.lz-introwm{font-size:clamp(1.7rem,5.5vw,3.2rem); letter-spacing:-.02em; color:var(--txt);
+  opacity:0; animation:lzIntroWm 1.6s ease .15s forwards}
+.lz-introwm b{font-weight:700; background:linear-gradient(96deg,#6fe6bf,#6fb0f0 45%,var(--hue));
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
+@keyframes lzIntro{0%,55%{opacity:1}100%{opacity:0; visibility:hidden}}
+@keyframes lzIntroWm{0%{opacity:0; transform:translateY(12px)}30%,58%{opacity:1; transform:none}100%{opacity:0; transform:translateY(-8px)}}
+@media(prefers-reduced-motion:reduce){ .lz-intro{animation:none; opacity:0; visibility:hidden} }
+
+/* ── hero: two columns — copy left, studio preview right ─────────────── */
+.lz-herogrid{position:relative; z-index:2; width:100%; max-width:1340px; margin:0 auto;
+  padding:112px clamp(20px,5.5vw,84px) 64px; display:grid; grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);
+  gap:clamp(24px,4vw,60px); align-items:center}
+.lz-herogrid .lz-heroin{max-width:none; width:auto; margin:0; padding:0}
+
+.lz-herostudio{display:flex; flex-direction:column; align-items:center; gap:11px; perspective:1300px}
+.stu-win{width:100%; max-width:540px; border-radius:16px; border:1px solid var(--brd); overflow:hidden;
+  background:linear-gradient(160deg, rgba(18,16,34,.9), rgba(9,8,18,.92)); backdrop-filter:blur(9px);
+  box-shadow:0 44px 92px -34px rgba(0,0,0,.85), 0 0 60px -22px color-mix(in srgb,var(--hue) 42%,transparent);
+  transform:rotateY(-9deg) rotateX(3deg); transition:transform .55s cubic-bezier(.2,.7,.3,1)}
+.lz-herostudio:hover .stu-win{transform:rotateY(-3deg) rotateX(1deg) translateY(-4px)}
+.stu-bar{display:flex; align-items:center; gap:7px; padding:9px 13px; background:rgba(255,255,255,.045); border-bottom:1px solid var(--brd)}
+.stu-bar i{width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,.18)}
+.stu-bar i:nth-child(1){background:#ff5f57} .stu-bar i:nth-child(2){background:#febc2e} .stu-bar i:nth-child(3){background:#28c840}
+.stu-title{margin-left:8px; font-size:.74rem; color:var(--dim); letter-spacing:.02em}
+.stu-live{margin-left:auto; font-size:.56rem; letter-spacing:.16em; color:#ff7a8a}
+.stu-body{padding:13px 13px 15px; display:flex; flex-direction:column; gap:11px}
+.stu-body .mini-tl{height:100px}
+.stu-row{display:grid; grid-template-columns:1.1fr .9fr; gap:11px; align-items:start}
+.stu-kb span{height:38px}
+.stu-cap{font-size:.72rem; color:var(--faint); letter-spacing:.02em}
+
+@media(max-width:960px){
+  .lz-herogrid{grid-template-columns:1fr; gap:34px; padding-top:100px}
+  .stu-win{transform:none; max-width:500px} .lz-herostudio{align-items:flex-start}
+  .lz-herostudio:hover .stu-win{transform:translateY(-4px)}
+}
+@media(max-width:560px){ .lz-herostudio{display:none} }
+
+/* ── layered-groove cards ────────────────────────────────────────────── */
+.grv-layers{display:flex; align-items:flex-end; gap:5px; height:44px; margin-bottom:11px}
+.grv-layers i{flex:1; border-radius:3px; height:16%; background:rgba(255,255,255,.12);
+  transition:height .3s cubic-bezier(.2,.8,.3,1), background .3s, box-shadow .3s}
+.lz-mel.groove .grv-layers i.on{height:calc(28% + var(--i,0) * 9%);
+  background:linear-gradient(180deg,#6fe6bf,#6fb0f0 50%,var(--hue)); box-shadow:0 0 14px -2px color-mix(in srgb,var(--hue) 75%,transparent)}
+.grv-meta{display:flex; justify-content:space-between; font-size:.72rem; color:var(--faint); letter-spacing:.02em; margin-bottom:14px}
+.lz-mel.groove.playing{border-color:color-mix(in srgb,var(--hue) 55%,transparent);
+  box-shadow:0 0 40px -18px color-mix(in srgb,var(--hue) 70%,transparent)}
+.lz-melplay.stop{background:color-mix(in srgb,#ff6f8e 20%,transparent); border-color:#ff6f8e; color:#ffdce3}
+.lz-melplay.stop svg{border-radius:3px}

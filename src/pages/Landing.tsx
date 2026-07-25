@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { engine } from '../audio/engine';
-import { FluidCanvas } from '../looper/FluidCanvas';
+import CinemaScene from '../landing/CinemaScene';
+import ScrollSongHUD from '../landing/ScrollSongHUD';
+import { useCinema } from '../landing/useCinema';
+import { GROOVES, playGroove, type Groove, type GrooveHandle } from '../landing/grooveKit';
 import './landing.css';
 
 const HUE = '#9B8CFF';
@@ -9,16 +12,6 @@ const PENT = [60, 62, 64, 67, 69, 72, 74, 76];
 const KEYCHARS = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k'];
 const NOTE_NAMES = ['C', 'D', 'E', 'G', 'A', 'C', 'D', 'E'];
 const INSTRUMENTS = ['drums', 'bass', '808', 'piano', 'e.piano', 'guitar', 'strings', 'brass', 'lead', 'pad', 'bells', 'voice'];
-
-// public-domain melodies — the live "famous songs" you can actually play
-const MELODIES = [
-  { name: 'Ode to Joy', by: 'Beethoven', tempo: 150, notes: [64, 64, 65, 67, 67, 65, 64, 62, 60, 60, 62, 64, 64, 62, 62] },
-  { name: 'Twinkle Twinkle', by: 'Traditional', tempo: 160, notes: [60, 60, 67, 67, 69, 69, 67, 65, 65, 64, 64, 62, 62, 60] },
-  { name: 'Für Elise', by: 'Beethoven', tempo: 200, notes: [76, 75, 76, 75, 76, 71, 74, 72, 69] },
-  { name: 'When the Saints', by: 'Traditional', tempo: 150, notes: [60, 64, 65, 67, 60, 64, 65, 67, 60, 64, 65, 67, 64, 60, 62] },
-  { name: 'Amazing Grace', by: 'Traditional', tempo: 120, notes: [67, 72, 76, 72, 76, 74, 72, 69, 67] },
-  { name: 'Frère Jacques', by: 'Traditional', tempo: 150, notes: [60, 62, 64, 60, 60, 62, 64, 60, 64, 65, 67, 64, 65, 67] },
-];
 
 function playNote(midi: number, vol = 0.26) {
   const ctx = engine.ensure();
@@ -75,21 +68,21 @@ function HeroKeys({ onPlay }: { onPlay: () => void }) {
   );
 }
 
-// a playable famous-melody card
-function MelodyCard({ m, busy, onPlay }: { m: typeof MELODIES[number]; busy: boolean; onPlay: () => void }) {
-  const [step, setStep] = useState(-1);
-  const play = () => {
-    if (busy) return; onPlay();
-    const beat = 60 / m.tempo;
-    m.notes.forEach((n, i) => setTimeout(() => { playNote(n, 0.24); setStep(i); }, i * beat * 1000));
-    setTimeout(() => setStep(-1), m.notes.length * beat * 1000 + 300);
-  };
+// a layered-groove card — press play and the layers stack in, one per bar
+function GrooveCard({ g, playing, active, onToggle }: { g: Groove; playing: boolean; active: boolean[]; onToggle: () => void }) {
   return (
-    <div className="lz-mel">
-      <div className="lz-melhd"><b>{m.name}</b><span>{m.by}</span></div>
-      <div className="lz-melnotes">{m.notes.map((_, i) => <i key={i} className={step === i ? 'on' : ''} />)}</div>
-      <button className="lz-melplay" onClick={play} disabled={busy && step < 0}>
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l11-7z" /></svg>Play it
+    <div className={'lz-mel groove' + (playing ? ' playing' : '')}>
+      <div className="lz-melhd"><b>{g.name}</b><span>{g.style}</span></div>
+      <div className="grv-layers" role="img" aria-label={g.layers + ' layers'}>
+        {Array.from({ length: g.layers }).map((_, i) => (
+          <i key={i} className={playing && active[i] ? 'on' : ''} style={{ ['--i' as string]: i }} />
+        ))}
+      </div>
+      <div className="grv-meta"><span>{g.layers} layers</span><span>{g.tempo} BPM</span></div>
+      <button className={'lz-melplay' + (playing ? ' stop' : '')} onClick={onToggle}>
+        {playing
+          ? <><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>Stop</>
+          : <><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l11-7z" /></svg>Play it</>}
       </button>
     </div>
   );
@@ -115,15 +108,56 @@ function MiniLayers() {
   return <div className="mini-ly">{['drums', 'bass', 'voice'].map((n, i) => <div key={n} className="lyr"><span>{n}</span><em className={i === 2 ? 's' : ''}>M</em><em>S</em><i /></div>)}</div>;
 }
 
+// a framed "product shot" of the studio for the hero — the app's feel + vibe
+function StudioPreview() {
+  return (
+    <div className="lz-herostudio" aria-hidden="true">
+      <div className="stu-win">
+        <div className="stu-bar"><i /><i /><i /><span className="stu-title">Aurora Groove — Studio</span><span className="stu-live">● REC</span></div>
+        <div className="stu-body">
+          <MiniTimeline />
+          <div className="stu-row">
+            <MiniLayers />
+            <MiniFx />
+          </div>
+          <div className="mini-kb stu-kb">{['C', 'D', 'E', 'G', 'A', 'C', 'D', 'E'].map((n, i) => <span key={i} className={i === 3 ? 'lit' : ''}>{n}</span>)}</div>
+        </div>
+      </div>
+      <span className="stu-cap">the studio — one screen, a whole band</span>
+    </div>
+  );
+}
+
 export default function Landing() {
   const nav = useNavigate();
+  useCinema();
   const [pulse, setPulse] = useState(0);
-  const [busy, setBusy] = useState('');
+  const [playing, setPlaying] = useState('');
+  const [grvActive, setGrvActive] = useState<boolean[]>([]);
+  const grvHandle = useRef<GrooveHandle | null>(null);
   const openStudio = () => nav('/studio');
-  const startMel = (name: string) => { setBusy(name); const m = MELODIES.find((x) => x.name === name)!; setTimeout(() => setBusy(''), m.notes.length * (60 / m.tempo) * 1000 + 300); };
+  const toggleGroove = (g: Groove) => {
+    grvHandle.current?.stop(); grvHandle.current = null;
+    if (playing === g.name) { setPlaying(''); setGrvActive([]); return; }
+    setPlaying(g.name); setGrvActive([]);
+    grvHandle.current = playGroove(g, {
+      onLayers: setGrvActive,
+      onEnd: () => setPlaying((p) => (p === g.name ? '' : p)),
+    });
+  };
+  useEffect(() => () => grvHandle.current?.stop(), []);
 
   return (
     <div className="lz" style={{ ['--hue' as string]: HUE }}>
+      {/* cinematic WebGL backdrop — dives the corridor as you scroll */}
+      <CinemaScene />
+      <div className="lz-scrim" aria-hidden="true" />
+      {/* page-load intro curtain (animates away on its own) */}
+      <div className="lz-intro" aria-hidden="true"><span className="lz-introwm"><b>Aurora</b> Groove</span></div>
+      {/* scroll-progress bar + the layered-song HUD */}
+      <div className="lz-prog" aria-hidden="true" />
+      <ScrollSongHUD />
+
       {/* nav */}
       <nav className="lz-nav">
         <div className="lz-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
@@ -141,26 +175,26 @@ export default function Landing() {
 
       {/* hero */}
       <header className="lz-hero">
-        <FluidCanvas hue={HUE} />
         <div className="lz-herofade" aria-hidden="true" />
         {pulse > 0 && <span className="lz-glow" key={pulse} aria-hidden="true" />}
-        <span className="lz-hud tl" aria-hidden="true">AURORA GROOVE · v1</span>
-        <span className="lz-hud tr" aria-hidden="true">KEY C · MAJOR PENT · 84 BPM</span>
-        <div className="lz-heroin">
-          <span className="lz-eyebrow">browser loop station · no install</span>
-          <h1 className="lz-h1">
-            <span className="line"><em>Anyone</em> can</span>
-            <span className="line">make <span className="grad">music.</span></span>
-          </h1>
-          <p className="lz-sub">Every key is already in tune. Play instruments, sing into the mic, stack loops — a groove in minutes. No lessons. No wrong notes.</p>
-          <div className="lz-cta">
-            <button className="lz-btn solid big" onClick={openStudio}>Open Studio →</button>
-            <span className="lz-hint">↓ or press a key right here</span>
+        <div className="lz-herogrid">
+          <div className="lz-heroin">
+            <span className="lz-eyebrow">browser loop station · no install</span>
+            <h1 className="lz-h1">
+              <span className="line"><em>Anyone</em> can</span>
+              <span className="line">make <span className="grad">music.</span></span>
+            </h1>
+            <p className="lz-sub">Every key is already in tune. Play instruments, sing into the mic, stack loops — a groove in minutes. No lessons. No wrong notes.</p>
+            <div className="lz-cta">
+              <button className="lz-btn solid big" onClick={openStudio}>Open Studio →</button>
+              <span className="lz-hint">↓ or press a key right here</span>
+            </div>
+            <div className="lz-playbar">
+              <HeroKeys onPlay={() => setPulse((p) => p + 1)} />
+              <span className="lz-playlabel">play me — every note lands in tune</span>
+            </div>
           </div>
-          <div className="lz-playbar">
-            <HeroKeys onPlay={() => setPulse((p) => p + 1)} />
-            <span className="lz-playlabel">play me — every note lands in tune</span>
-          </div>
+          <StudioPreview />
         </div>
         <span className="lz-scroll" aria-hidden="true">scroll</span>
       </header>
@@ -173,13 +207,13 @@ export default function Landing() {
       {/* LIVE playable famous melodies — the showpiece */}
       <section className="lz-sec lz-famous">
         <Reveal>
-          <span className="lz-kicker">live · press play, hear it in your browser</span>
-          <h2 className="lz-h2">Songs you know — <span className="grad">already in tune.</span></h2>
-          <p className="lz-sub">These play right here on the same engine that powers the studio. Every note snaps to the scale, so it just works.</p>
+          <span className="lz-kicker">live · press play — layers stack in</span>
+          <h2 className="lz-h2">Grooves you feel — <span className="grad">stacked live.</span></h2>
+          <p className="lz-sub">Not one-finger tunes — full arrangements in the styles you already love. Hit play and the layers pile on, one per bar: drums, bass, chords, arp, pad, lead — up to eight deep. Same engine that powers the studio.</p>
         </Reveal>
         <div className="lz-melgrid">
-          {MELODIES.map((m, i) => (
-            <Reveal key={m.name} delay={(i % 3) * 90}><MelodyCard m={m} busy={busy !== '' && busy !== m.name} onPlay={() => startMel(m.name)} /></Reveal>
+          {GROOVES.map((g, i) => (
+            <Reveal key={g.name} delay={(i % 3) * 90}><GrooveCard g={g} playing={playing === g.name} active={grvActive} onToggle={() => toggleGroove(g)} /></Reveal>
           ))}
         </div>
       </section>
