@@ -15,6 +15,8 @@ interface Save { id: number; name: string; session: Session }
 const SAVES_KEY = 'riyaaz.looper.saves';
 // the in-progress loop, autosaved locally — survives ANY reload + the OAuth redirect
 const WORKING_KEY = 'aurora.working.session';
+// a cloud groove id is a uuid; anything else (a stale local id) → treat as unsaved
+const asCloudId = (id: string | null): string | undefined => (id && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id) ? id : undefined);
 const readSaves = (): Save[] => { try { return JSON.parse(localStorage.getItem(SAVES_KEY) || '[]'); } catch { return []; } };
 const writeSaves = (a: Save[]) => localStorage.setItem(SAVES_KEY, JSON.stringify(a));
 // voice PCM is heavy — if the store overflows, retry without the voice audio.
@@ -138,32 +140,34 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
   const [cards, setCards] = useState<GrooveMeta[]>([]);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // ── keep the in-progress loop alive across ANY reload / the OAuth redirect ──
-  // captured ONCE at mount, before autosave can overwrite it
-  const [bootSession] = useState<Session | null>(() => {
-    try { const raw = localStorage.getItem(WORKING_KEY); if (raw) { const s = JSON.parse(raw) as Session; return s.layers?.length ? s : null; } } catch { /* ignore */ }
+  const [acctOpen, setAcctOpen] = useState(false);
+  // ── keep the in-progress loop AND which saved groove it maps to alive across ──
+  // any reload / the OAuth redirect. Captured ONCE at mount, before autosave runs.
+  const [boot] = useState<{ session: Session; savedId: string | null } | null>(() => {
+    try { const raw = localStorage.getItem(WORKING_KEY); if (raw) { const p = JSON.parse(raw); if (p?.session?.layers?.length) return { session: p.session as Session, savedId: (p.savedId ?? null) as string | null }; } } catch { /* ignore */ }
     return null;
   });
   const saveWorking = async () => {
     try {
       const s = await looper.snapshotSession();
-      try { localStorage.setItem(WORKING_KEY, JSON.stringify(s)); }
-      catch { try { localStorage.setItem(WORKING_KEY, JSON.stringify({ ...s, layers: s.layers.filter((l) => l.kind !== 'voice') })); } catch { /* out of room */ } }
+      const wrap = (sess: Session) => JSON.stringify({ session: sess, savedId });
+      try { localStorage.setItem(WORKING_KEY, wrap(s)); }
+      catch { try { localStorage.setItem(WORKING_KEY, wrap({ ...s, layers: s.layers.filter((l) => l.kind !== 'voice') })); } catch { /* out of room */ } }
     } catch { /* ignore */ }
   };
   const signInPreserving = async () => { await saveWorking(); await signIn(); };
   const restoredRef = useRef(false);
-  // restore the working loop once the engine is ready
+  // restore the working loop + its saved-groove link once the engine is ready
   useEffect(() => {
     if (!ready || restoredRef.current) return;
     restoredRef.current = true;
-    if (bootSession) { try { looper.loadSession(bootSession); force(); } catch { /* ignore */ } }
+    if (boot) { try { looper.loadSession(boot.session); if (boot.savedId) setSavedId(boot.savedId); force(); } catch { /* ignore */ } }
   }, [ready]);
-  // autosave the working loop whenever it changes (only after the initial restore)
+  // autosave whenever the loop OR its saved link changes (after the initial restore)
   useEffect(() => {
     if (!ready || !restoredRef.current) return;
     void saveWorking();
-  }, [looper.layers.length, ready]);
+  }, [looper.layers.length, savedId, ready]);
   const localCards = (): GrooveMeta[] => readSaves().map((s) => ({
     id: String(s.id), name: s.name, keyRoot: s.session.keyRoot, scaleId: s.session.scaleId,
     bpm: s.session.bpm, bars: s.session.bars, quantize: s.session.quantize, layerCount: s.session.layers.length, updatedAt: '',
@@ -184,7 +188,7 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
       const session = await looper.snapshotSession();
       if (cloud) {
         const name = cards.find((c) => c.id === savedId)?.name ?? nextName();
-        setSavedId(await saveGroove(session, name, savedId ?? undefined)); await refreshSaves();
+        setSavedId(await saveGroove(session, name, asCloudId(savedId))); await refreshSaves();
       } else {
         const all = readSaves();
         if (savedId != null) { const i = all.findIndex((s) => String(s.id) === savedId); if (i >= 0) all[i].session = session; }
@@ -199,7 +203,7 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
     let alive = true;
     void looper.snapshotSession().then(async (session) => {
       if (!alive) return;
-      if (cloud) { const name = cards.find((c) => c.id === savedId)?.name ?? nextName(); await saveGroove(session, name, savedId); await refreshSaves(); }
+      if (cloud) { const cid = asCloudId(savedId); if (!cid) return; const name = cards.find((c) => c.id === cid)?.name ?? nextName(); await saveGroove(session, name, cid); await refreshSaves(); }
       else { const all = readSaves(); const i = all.findIndex((s) => String(s.id) === savedId); if (i >= 0) { all[i].session = session; persistSaves(all); setCards(localCards()); } }
     });
     return () => { alive = false; };
@@ -290,11 +294,29 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
           <button className="sr-orb" onClick={() => setPanel('keys')} title="learn to groove" aria-label="learn to groove">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M5 3v4M3 5h4M6 17v3M4.5 18.5h3" /><path d="M15 4l2.4 5.6L23 12l-5.6 2.4L15 20l-2.4-5.6L7 12l5.6-2.4L15 4z" /></svg>
           </button>
-          {enabled && (user ? (
-            <button className="sr-orb acct" onClick={() => void signOut()} title={(user.email ?? 'account') + ' — sign out'} aria-label="sign out">
-              <span className="ini">{(user.email ?? '?').charAt(0).toUpperCase()}</span>
-            </button>
-          ) : (
+          {enabled && (user ? (() => {
+            const meta = (user.user_metadata ?? {}) as Record<string, string>;
+            const avatar = meta.avatar_url || meta.picture || '';
+            const name = meta.full_name || meta.name || user.email || 'You';
+            const ini = (name || '?').charAt(0).toUpperCase();
+            return (
+              <div className="sr-acct-wrap">
+                <button className={'sr-orb acct' + (acctOpen ? ' open' : '')} onClick={() => setAcctOpen((o) => !o)} title="account" aria-label="account">
+                  {avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : <span className="ini">{ini}</span>}
+                </button>
+                {acctOpen && (<>
+                  <div className="sr-acct-scrim" onClick={() => setAcctOpen(false)} />
+                  <div className="sr-acct-menu">
+                    <div className="am-head">
+                      {avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : <span className="am-ini">{ini}</span>}
+                      <div className="am-id"><b>{name}</b><span>{user.email}</span></div>
+                    </div>
+                    <button className="am-out" onClick={() => { setAcctOpen(false); void signOut(); }}>Log out</button>
+                  </div>
+                </>)}
+              </div>
+            );
+          })() : (
             <button className="sr-orb" onClick={() => void signInPreserving()} title="sign in with Google" aria-label="sign in">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></svg>
             </button>
@@ -364,10 +386,6 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
             <Fx label="drv" val={fxA.drive} min={0} set={(v) => { looper.setInstDrive(fxId, v); force(); }} />
             <Fx label="sus" val={fxA.sustain} min={0} set={(v) => { looper.setInstSustain(fxId, v); force(); }} />
           </div>
-          <div className="sr-uc">
-            <button className="undo" onClick={() => looper.undo()} disabled={looper.layers.length === 0}>undo</button>
-            <button className="clear" onClick={() => looper.clear()} disabled={looper.layers.length === 0}>clear</button>
-          </div>
         </div>
       </div>
 
@@ -392,8 +410,12 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
             {row.tail?.map((t, ti) => <div key={'t' + ti} className="sr-cap asleep" style={{ ['--w' as string]: t.w }}>{t.label}</div>)}
           </div>
         ))}
-        <div className="sr-krow">
+        <div className="sr-krow recrow">
           <button className={'sr-cap space rec-' + rec} onPointerDown={(e) => { e.preventDefault(); looper.record(); (e.currentTarget as HTMLButtonElement).blur(); }} style={{ ['--w' as string]: 13 }}><span className="reclbl">{recLabel === 'REC' || recLabel === '＋' ? 'REC' : recLabel}</span><em>space bar</em><i className="ring" /></button>
+          <div className="sr-uc">
+            <button className="undo" onClick={() => looper.undo()} disabled={looper.layers.length === 0}>undo</button>
+            <button className="clear" onClick={() => looper.clear()} disabled={looper.layers.length === 0}>clear</button>
+          </div>
         </div>
       </div>
 

@@ -119,9 +119,10 @@
 .sr-fx input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:15px; height:15px; border-radius:50%; cursor:pointer;
   background:radial-gradient(circle at 35% 30%, #fff, var(--hue)); box-shadow:0 0 10px var(--hue)}
 .sr-fx b{font-family:var(--mono); font-weight:600; font-size:1.15rem; min-width:15px; text-align:center; font-variant-numeric:tabular-nums; color:var(--txt)}
-/* undo / clear — stacked square chips (like metronome/assist), undo violet · clear red */
-.sr-uc{display:flex; flex-direction:column; gap:8px; flex:0 0 auto; width:92px; border-left:1px solid var(--brd); padding-left:16px}
-.sr-uc button{flex:1; display:flex; align-items:center; justify-content:center; border-radius:14px; min-height:44px;
+/* undo / clear — stacked square chips at the bottom-right, in the REC row */
+.sr-krow.recrow{position:relative; width:100%}
+.sr-uc{position:absolute; right:0; top:0; bottom:0; display:flex; flex-direction:column; gap:7px; width:calc(var(--u)*2.1)}
+.sr-uc button{flex:1; display:flex; align-items:center; justify-content:center; border-radius:14px; min-height:0;
   background:var(--glass2); border:1px solid var(--brd); color:var(--dim); backdrop-filter:blur(10px);
   font-family:var(--disp); font-weight:600; font-size:.82rem; letter-spacing:.09em; text-transform:uppercase; cursor:pointer; transition:.2s}
 .sr-uc button:disabled{opacity:.4; cursor:default}
@@ -180,8 +181,26 @@
 .sr-orb.saved{color:#ff7ea6; border-color:#ff7ea6; box-shadow:0 0 26px -8px #ff7ea6, inset 0 0 18px -10px #ff7ea6; animation:heartpop .5s cubic-bezier(.2,1.5,.4,1)}
 .sr-orb:disabled{cursor:default; opacity:.42}
 @keyframes heartpop{0%{transform:scale(1)}45%{transform:scale(1.28)}100%{transform:scale(1)}}
-.sr-orb.acct{color:var(--txt); border-color:color-mix(in srgb,var(--hue) 45%,transparent); background:color-mix(in srgb,var(--hue) 22%, var(--glass2))}
+.sr-orb.acct{color:var(--txt); border-color:color-mix(in srgb,var(--hue) 45%,transparent); background:color-mix(in srgb,var(--hue) 22%, var(--glass2)); overflow:hidden; padding:0}
 .sr-orb.acct .ini{font-family:var(--serif); font-weight:700; font-size:1.05rem; line-height:1}
+.sr-orb.acct img{width:100%; height:100%; border-radius:50%; object-fit:cover}
+.sr-orb.acct.open{border-color:var(--hue); box-shadow:0 0 22px -8px var(--hue)}
+/* account dropdown menu */
+.sr-acct-wrap{position:relative}
+.sr-acct-scrim{position:fixed; inset:0; z-index:79}
+.sr-acct-menu{position:absolute; top:calc(100% + 12px); right:0; z-index:80; width:264px; padding:14px; border-radius:16px;
+  background:linear-gradient(160deg, rgba(34,27,60,.98), rgba(10,8,22,.99)); border:1px solid color-mix(in srgb,var(--hue) 26%,transparent);
+  box-shadow:0 24px 60px -20px #000, inset 0 1px 0 rgba(255,255,255,.06); animation:menuIn .18s cubic-bezier(.2,.8,.2,1)}
+@keyframes menuIn{from{opacity:0; transform:translateY(-8px) scale(.97)}to{opacity:1; transform:none}}
+.am-head{display:flex; align-items:center; gap:12px; padding:2px 2px 13px; border-bottom:1px solid var(--brd); margin-bottom:12px}
+.am-head img, .am-ini{width:44px; height:44px; border-radius:50%; flex:0 0 auto; object-fit:cover}
+.am-ini{display:flex; align-items:center; justify-content:center; background:color-mix(in srgb,var(--hue) 32%,transparent); color:#fff; font-family:var(--serif); font-weight:700; font-size:1.25rem}
+.am-id{min-width:0}
+.am-id b{display:block; font-family:var(--serif); font-size:1.04rem; font-weight:700; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.am-id span{display:block; font-size:.82rem; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.am-out{width:100%; padding:11px; border-radius:12px; background:color-mix(in srgb,#ff6b6b 14%,transparent); border:1px solid color-mix(in srgb,#ff6b6b 52%,transparent);
+  color:#ffb0b0; font-family:var(--disp); font-weight:600; font-size:.96rem; letter-spacing:.02em; cursor:pointer; transition:.2s}
+.am-out:hover{background:color-mix(in srgb,#ff6b6b 26%,transparent); border-color:#ff6b6b; color:#fff}
 
 /* sign-in prompt + import (in My Grooves) */
 .sr-empty .groovebtn.signin{display:inline-flex; align-items:center; justify-content:center; gap:9px; width:auto; margin:18px auto 0; padding:11px 20px;
