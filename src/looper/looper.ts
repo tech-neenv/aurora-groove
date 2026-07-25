@@ -648,6 +648,17 @@ class Looper {
     this.node?.port.postMessage({ type: 'config', len: this.loopFrames(), offset: this.offsetFrames });
     this.emit();
   }
+  // start a blank Stage — clears layers AND resets the grid to defaults (unlocks it)
+  newSession() {
+    for (const L of this.layers) if (L.chan) this.disposeChan(L.chan);
+    this.layers = []; this.voiceCount = 0;
+    this.bpm = 84; this.bars = 2; this.keyRoot = 0; this.scaleId = 'pentMajor'; this.quantize = true;
+    this.loopSet = false; this.recState = 'idle'; this.countIn = 0; this.recEvents = [];
+    this.paused = false; this.stopped = false; this.setPlay(1);
+    this.node?.port.postMessage({ type: 'clear' });
+    this.node?.port.postMessage({ type: 'config', len: this.loopFrames(), offset: this.offsetFrames });
+    this.emit();
+  }
   setTempo(bpm: number) { this.bpm = Math.round(Math.max(50, Math.min(180, bpm))); this.resetLoop(); }
   setBars(bars: number) { this.bars = Math.max(1, Math.min(8, Math.round(bars))); this.resetLoop(); }
   setKey(root: number) { this.keyRoot = ((root % 12) + 12) % 12; this.emit(); }

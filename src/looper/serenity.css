@@ -20,7 +20,7 @@
 .sr-veil{position:fixed; inset:0; z-index:1; pointer-events:none;
   background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(6,4,16,.5) 100%),
              linear-gradient(180deg, rgba(6,4,16,.28), transparent 22%, transparent 72%, rgba(6,4,16,.42))}
-.sr-root > *:not(.sr-fluid):not(.sr-veil):not(.sr-motes):not(.sr-drawer-scrim){position:relative; z-index:2}
+.sr-root > *:not(.sr-fluid):not(.sr-veil):not(.sr-motes):not(.sr-drawer-scrim):not(.sr-guard-scrim){position:relative; z-index:2}
 
 /* drifting bokeh motes */
 .sr-motes{position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden}
@@ -201,6 +201,23 @@
 .am-out{width:100%; padding:11px; border-radius:12px; background:color-mix(in srgb,#ff6b6b 14%,transparent); border:1px solid color-mix(in srgb,#ff6b6b 52%,transparent);
   color:#ffb0b0; font-family:var(--disp); font-weight:600; font-size:.96rem; letter-spacing:.02em; cursor:pointer; transition:.2s}
 .am-out:hover{background:color-mix(in srgb,#ff6b6b 26%,transparent); border-color:#ff6b6b; color:#fff}
+
+/* new-session guard modal */
+.sr-guard-scrim{position:fixed; inset:0; z-index:90; display:flex; align-items:center; justify-content:center; background:rgba(4,3,12,.55); backdrop-filter:blur(4px)}
+.sr-guard{width:min(400px,92vw); padding:26px 26px 22px; border-radius:20px; text-align:center;
+  background:linear-gradient(160deg, rgba(34,27,60,.98), rgba(10,8,22,.99)); border:1px solid color-mix(in srgb,var(--hue) 28%,transparent);
+  box-shadow:0 28px 70px -20px #000; animation:menuIn .2s cubic-bezier(.2,.8,.2,1)}
+.sr-guard b{display:block; font-family:var(--serif); font-size:1.4rem; font-weight:700; color:var(--txt); margin-bottom:8px}
+.sr-guard p{font-size:.95rem; line-height:1.5; color:var(--dim); margin-bottom:20px}
+.sr-guard .gbtns{display:flex; flex-direction:column; gap:9px}
+.sr-guard .gbtns button{padding:12px; border-radius:12px; font-family:var(--disp); font-weight:600; font-size:1rem; cursor:pointer; transition:.2s; border:1px solid var(--brd)}
+.sr-guard .g-save{background:linear-gradient(100deg, color-mix(in srgb,var(--hue) 32%,transparent), color-mix(in srgb,var(--hue) 18%,transparent)); border-color:var(--hue); color:#fff}
+.sr-guard .g-save:hover:not(:disabled){box-shadow:0 8px 26px -10px var(--hue)}
+.sr-guard .g-save:disabled{opacity:.5; cursor:default}
+.sr-guard .g-fresh{background:color-mix(in srgb,#ff6b6b 12%,transparent); border-color:color-mix(in srgb,#ff6b6b 45%,transparent); color:#ffb0b0}
+.sr-guard .g-fresh:hover{background:color-mix(in srgb,#ff6b6b 22%,transparent); border-color:#ff6b6b; color:#fff}
+.sr-guard .g-cancel{background:rgba(255,255,255,.04); color:var(--dim)}
+.sr-guard .g-cancel:hover{color:var(--txt); border-color:var(--hue)}
 
 /* sign-in prompt + import (in My Grooves) */
 .sr-empty .groovebtn.signin{display:inline-flex; align-items:center; justify-content:center; gap:9px; width:auto; margin:18px auto 0; padding:11px 20px;

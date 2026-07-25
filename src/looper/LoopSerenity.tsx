@@ -181,30 +181,38 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
   useEffect(() => { if (showKeys) { setPanel('keys'); setShowKeys(false); } }, [showKeys]);
 
   const nextName = () => 'Groove ' + (cards.length + 1);
-  const doSave = async () => {
-    if (enabled && !user) { void signInPreserving(); return; }    // saving requires sign-in
+  // put the Stage on the shelf. existing = update that groove; undefined = new groove.
+  const putGroove = async (existing?: string) => {
     setBusy(true);
     try {
       const session = await looper.snapshotSession();
-      if (cloud) {
-        const name = cards.find((c) => c.id === savedId)?.name ?? nextName();
-        setSavedId(await saveGroove(session, name, asCloudId(savedId))); await refreshSaves();
-      } else {
-        const all = readSaves();
-        if (savedId != null) { const i = all.findIndex((s) => String(s.id) === savedId); if (i >= 0) all[i].session = session; }
-        else { const id = Date.now(); all.push({ id, name: nextName(), session }); setSavedId(String(id)); }
-        persistSaves(all); setCards(localCards());
-      }
+      if (cloud) { setSavedId(await saveGroove(session, cards.find((c) => c.id === existing)?.name ?? nextName(), existing)); await refreshSaves(); }
+      else { const all = readSaves(); if (existing) { const i = all.findIndex((s) => String(s.id) === existing); if (i >= 0) all[i].session = session; } else { const id = Date.now(); all.push({ id, name: nextName(), session }); setSavedId(String(id)); } persistSaves(all); setCards(localCards()); }
     } finally { setBusy(false); }
   };
-  // keep the current groove in sync as the loop grows (voice export is async)
+  // Save = keep the Stage on your shelf. Requires sign-in. First save creates +
+  // links the groove; after that it auto-keeps-in-sync, so a 2nd press is a no-op.
+  const doSave = async () => {
+    if (looper.layers.length === 0 || busy) return;
+    if (enabled && !user) { void signInPreserving(); return; }   // saving requires sign-in
+    if (asCloudId(savedId)) return;                              // already saved + kept in sync
+    await putGroove();
+  };
+  // Duplicate = fork a fresh copy of the Stage (no existing id → new groove).
+  const doDuplicate = async () => {
+    if (looper.layers.length === 0 || busy) return;
+    if (enabled && !user) { void signInPreserving(); return; }
+    await putGroove();
+  };
+  // auto keep-in-sync: a linked (saved) Stage rewrites its groove as the loop changes
   useEffect(() => {
-    if (savedId == null) return;
+    const cid = asCloudId(savedId);
+    if (savedId == null || (cloud && !cid)) return;
     let alive = true;
     void looper.snapshotSession().then(async (session) => {
       if (!alive) return;
-      if (cloud) { const cid = asCloudId(savedId); if (!cid) return; const name = cards.find((c) => c.id === cid)?.name ?? nextName(); await saveGroove(session, name, cid); await refreshSaves(); }
-      else { const all = readSaves(); const i = all.findIndex((s) => String(s.id) === savedId); if (i >= 0) { all[i].session = session; persistSaves(all); setCards(localCards()); } }
+      if (cloud && cid) { await saveGroove(session, cards.find((c) => c.id === cid)?.name ?? nextName(), cid); await refreshSaves(); }
+      else if (!enabled) { const all = readSaves(); const i = all.findIndex((s) => String(s.id) === savedId); if (i >= 0) { all[i].session = session; persistSaves(all); setCards(localCards()); } }
     });
     return () => { alive = false; };
   }, [looper.layers.length, savedId]);
@@ -222,12 +230,14 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
       setSavedId(id); setPanel(null); force();
     } finally { setBusy(false); }
   };
-  // one-click migration of pre-login local grooves into the cloud
-  const localPending = cloud ? readSaves().length : 0;
-  const importLocal = async () => {
-    setBusy(true);
-    try { for (const s of readSaves()) await saveGroove(s.session, s.name); localStorage.removeItem(SAVES_KEY); await refreshSaves(); }
-    finally { setBusy(false); }
+  // New = start a blank Stage. Un-kept work → guard first; kept/empty → clear now.
+  const [newGuard, setNewGuard] = useState(false);
+  const startFresh = () => { looper.newSession(); setSavedId(null); try { localStorage.removeItem(WORKING_KEY); } catch { /* ignore */ } setNewGuard(false); force(); };
+  const doNew = () => { if (looper.layers.length === 0 || asCloudId(savedId)) startFresh(); else setNewGuard(true); };
+  const saveAndNew = async () => {
+    if (enabled && !user) { setNewGuard(false); void signInPreserving(); return; }
+    await doSave();
+    startFresh();
   };
 
   // download the whole groove (4 loops) as a WAV
@@ -280,14 +290,23 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
           */}
         </div>
         <div className="sr-top-end">
+          <button className="sr-orb" onClick={doNew} title="new groove" aria-label="new groove">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 5v14M5 12h14" /></svg>
+          </button>
           <button className={'sr-orb' + (dl ? ' busy' : '')} disabled={looper.layers.length === 0 || dl} onClick={doDownload} title={enabled && !user ? 'sign in to download' : 'download groove (.wav)'} aria-label="download">
             {dl ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="spin"><path d="M21 12a9 9 0 1 1-6.2-8.5" /></svg>
               : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 3v12M7 11l5 5 5-5M5 21h14" /></svg>}
           </button>
-          <button className={'sr-orb' + (savedId != null ? ' saved' : '')} disabled={savedId != null || busy || looper.layers.length === 0} onClick={doSave}
-            title={enabled && !user ? 'sign in to save' : savedId != null ? 'saved — auto-syncs' : 'save this groove'} aria-label="save">
-            <svg viewBox="0 0 24 24" fill={savedId != null ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.7"><path d="M12 21s-7.5-4.6-10-9.2C.4 8.5 1.9 4.9 5.3 4.5 7.5 4.2 9.2 5.4 12 8.2c2.8-2.8 4.5-4 6.7-3.7 3.4.4 4.9 4 3.3 7.3C19.5 16.4 12 21 12 21z" /></svg>
+          <button className={'sr-orb' + (savedId != null ? ' saved' : '') + (busy ? ' busy' : '')} disabled={busy || looper.layers.length === 0} onClick={doSave}
+            title={enabled && !user ? 'sign in to save' : savedId != null ? 'saved — kept in sync' : 'save this groove'} aria-label="save">
+            {busy ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="spin"><path d="M21 12a9 9 0 1 1-6.2-8.5" /></svg>
+              : <svg viewBox="0 0 24 24" fill={savedId != null ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.7"><path d="M12 21s-7.5-4.6-10-9.2C.4 8.5 1.9 4.9 5.3 4.5 7.5 4.2 9.2 5.4 12 8.2c2.8-2.8 4.5-4 6.7-3.7 3.4.4 4.9 4 3.3 7.3C19.5 16.4 12 21 12 21z" /></svg>}
           </button>
+          {savedId != null && (
+            <button className="sr-orb" disabled={busy} onClick={doDuplicate} title="duplicate — save a copy" aria-label="duplicate">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
+            </button>
+          )}
           <button className="sr-orb" onClick={() => { void refreshSaves(); setPanel('saves'); }} title="my grooves" aria-label="my grooves">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 3l9 5-9 5-9-5 9-5z" /><path d="M3 12l9 5 9-5M3 16.5l9 5 9-5" /></svg>
           </button>
@@ -484,14 +503,24 @@ export function LoopSerenity({ onExit }: { onExit: () => void }) {
                     </div>
                   );
                 })}
-                {cloud && localPending > 0 && (
-                  <button className="sr-import" disabled={busy} onClick={() => void importLocal()}>
-                    Import {localPending} local groove{localPending > 1 ? 's' : ''} to your account
-                  </button>
-                )}
               </div>
             )}
           </aside>
+        </div>
+      )}
+
+      {/* New-session guard — only when the Stage has un-kept work */}
+      {newGuard && (
+        <div className="sr-guard-scrim" onClick={() => setNewGuard(false)}>
+          <div className="sr-guard" onClick={(e) => e.stopPropagation()}>
+            <b>Start a new groove?</b>
+            <p>Your current loop isn't saved to your grooves yet. Starting fresh will clear it — this can't be undone.</p>
+            <div className="gbtns">
+              <button className="g-save" disabled={busy} onClick={() => void saveAndNew()}>Save &amp; New</button>
+              <button className="g-fresh" onClick={startFresh}>Start fresh</button>
+              <button className="g-cancel" onClick={() => setNewGuard(false)}>Cancel</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
