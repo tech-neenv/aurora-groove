@@ -1,0 +1,173 @@
+/* /goodlanding — "The Night of Found Sound" shell styles.
+   Type: display = Fraunces (characterful high-contrast serif, brief S2),
+   body/UI = Bricolage Grotesque (already loaded by the app). */
+
+.agr-root {
+  --void: #05040c;
+  --snow: #dfe6f2;
+  --a1: #16e0b8;
+  --a2: #6a5cff;
+  --a3: #ff4fd8;
+  --device: #ffd166;
+  position: relative;
+  width: 100%;
+  color: var(--snow);
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+}
+
+.agr-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+.agr-canvas canvas { display: block; }
+
+/* subtle legibility scrim so copy always reads (brief self-critique) */
+.agr-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(140% 110% at 50% 45%, transparent 55%, rgba(5, 4, 12, 0.4) 100%);
+}
+
+.agr-flow { position: relative; z-index: 2; }
+.agr-chapter { position: relative; }
+
+/* copy sticks centered while its tall section scrolls past */
+.agr-copy {
+  position: sticky;
+  top: 42vh;
+  text-align: center;
+  padding: 0 8vw;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 1.1s ease, transform 1.1s ease;
+  pointer-events: none;
+}
+.agr-copy.in { opacity: 1; transform: none; }
+.agr-copy p {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(1.6rem, 4.4vw, 3.4rem);
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  margin: 0.15em 0;
+  text-shadow: 0 2px 40px rgba(5, 4, 12, 0.8);
+  transition-delay: calc(var(--i) * 260ms);
+}
+.agr-hud {
+  display: inline-block;
+  margin-top: 1.4em;
+  font-size: 0.72rem;
+  letter-spacing: 0.42em;
+  color: var(--device);
+  text-transform: uppercase;
+}
+
+/* chapter index nav — right edge, Ivress-style */
+.agr-nav {
+  position: fixed;
+  right: 2vw;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  text-align: right;
+}
+.agr-nav-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  color: rgba(223, 230, 242, 0.45);
+  text-decoration: none;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  transition: color 0.4s ease;
+}
+.agr-nav-item:hover { color: var(--snow); }
+.agr-nav-num { font-variant-numeric: tabular-nums; opacity: 0.8; }
+.agr-nav-title { min-width: 0; }
+
+.agr-sound {
+  position: fixed;
+  left: 2vw;
+  bottom: 2vh;
+  z-index: 5;
+  background: none;
+  border: 1px solid rgba(223, 230, 242, 0.25);
+  color: var(--snow);
+  padding: 0.5em 0.9em;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  letter-spacing: 0.28em;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+.agr-sound:hover { border-color: var(--a1); }
+
+.agr-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 3vh;
+  transform: translateX(-50%);
+  z-index: 5;
+  font-size: 0.62rem;
+  letter-spacing: 0.36em;
+  color: rgba(223, 230, 242, 0.6);
+  animation: agr-bob 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes agr-bob { 0%,100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 8px); } }
+
+/* start gate */
+.agr-gate {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 4vw;
+  text-align: center;
+  background: radial-gradient(120% 90% at 50% 45%, rgba(10, 8, 24, 0.6), var(--void) 80%);
+  border: none;
+  color: var(--snow);
+  cursor: pointer;
+}
+.agr-gate-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(2.4rem, 7vw, 5rem);
+  letter-spacing: 0.16em;
+  max-width: 100%;
+}
+.agr-gate-sub {
+  font-size: 0.72rem;
+  letter-spacing: 0.5em;
+  color: rgba(223, 230, 242, 0.6);
+  text-transform: uppercase;
+}
+.agr-gate-cta {
+  margin-top: 2.5rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.4em;
+  color: var(--device);
+  animation: agr-pulse 2s ease-in-out infinite;
+}
+@keyframes agr-pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+@media (max-width: 767px) {
+  .agr-nav { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agr-copy { transition-duration: 0.4s; }
+  .agr-hint, .agr-gate-cta { animation: none; }
+}

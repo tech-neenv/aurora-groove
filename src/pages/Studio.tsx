@@ -1,55 +1,61 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoopSerenity } from '../looper/LoopSerenity';
 
-// /studio — the loop station. Open to everyone; saving prompts sign-in.
-// The studio needs room (multi-track UI + live audio), so on small / touch
-// screens we show a "come back on a bigger screen" notice instead of mounting it.
-const SMALL = '(max-width:860px)';
-
-function useSmallScreen(): boolean {
-  const [small, setSmall] = useState(() => window.matchMedia(SMALL).matches);
-  useEffect(() => {
-    const mq = window.matchMedia(SMALL);
-    const on = () => setSmall(mq.matches);
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
-  return small;
-}
-
-function StudioTooSmall({ onBack }: { onBack: () => void }) {
-  return (
-    <div style={{
-      minHeight: '100vh', display: 'grid', placeItems: 'center', textAlign: 'center',
-      background: 'radial-gradient(120% 80% at 50% -10%, rgba(155,140,255,.14), transparent 60%), linear-gradient(180deg,#0a0818,#05040c)',
-      color: '#f7f5ff', fontFamily: "'Bricolage Grotesque', system-ui, sans-serif", padding: '32px',
-    }}>
-      <div style={{ maxWidth: 420 }}>
-        <svg viewBox="0 0 44 44" width="44" height="44" style={{ marginBottom: 22 }} aria-hidden="true">
-          <defs><linearGradient id="sg" x1="4" y1="40" x2="40" y2="6" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#3fe0a6" /><stop offset=".5" stopColor="#49a6ea" /><stop offset="1" stopColor="#b48cff" /></linearGradient></defs>
-          <path d="M6 29 C 13 12, 20 13, 23 23 C 25 31, 32 32, 38 15" fill="none" stroke="url(#sg)" strokeWidth="3.4" strokeLinecap="round" />
-        </svg>
-        <h1 style={{ fontSize: '1.7rem', lineHeight: 1.15, margin: '0 0 14px', letterSpacing: '-.02em' }}>
-          The Studio needs a bigger stage.
-        </h1>
-        <p style={{ fontSize: '1rem', lineHeight: 1.6, color: 'rgba(236,231,255,.8)', margin: '0 0 28px' }}>
-          Making a track takes room — several tracks, a mixer and live audio. Open Aurora Groove on a
-          <b> desktop or laptop</b> to enter the studio. The landing plays fine right here.
-        </p>
-        <button onClick={onBack} style={{
-          font: 'inherit', fontWeight: 700, fontSize: '.95rem', color: '#fff', cursor: 'pointer',
-          border: '1px solid #9b8cff', borderRadius: 12, padding: '12px 22px',
-          background: 'linear-gradient(100deg, rgba(155,140,255,.42), rgba(155,140,255,.2))',
-        }}>← Back to Aurora Groove</button>
-      </div>
-    </div>
-  );
-}
+// /studio — the loop station. Open to everyone (incl. mobile landscape).
+// The UI is designed for a comfortable "stage" size; on smaller screens we
+// render it at that design size and UNIFORMLY SCALE it to fit the viewport
+// (a true zoomed-out version) so every control stays reachable with no scroll.
+const DESIGN_W = 940;
+const DESIGN_H = 470;
 
 export default function Studio() {
   const nav = useNavigate();
-  const small = useSmallScreen();
-  if (small) return <StudioTooSmall onBack={() => nav('/')} />;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const prevOverflow = root.style.overflow;
+    const prevOverscroll = root.style.overscrollBehavior;
+    root.style.overflow = 'hidden';
+    root.style.overscrollBehavior = 'none';
+
+    // Fit-to-viewport + force-landscape:
+    //  · Landscape screen smaller than the design stage → scale down to fit.
+    //  · Portrait phone/tablet → present the studio in LANDSCAPE by rotating it
+    //    90° (so it fills the screen sideways); scale is computed against the
+    //    swapped dimensions. Rotating the phone to real landscape drops the
+    //    rotation automatically (recomputed on resize/orientationchange).
+    // Never scales up past 1.
+    const fit = () => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const portrait = vh > vw;
+      const availW = portrait ? vh : vw; // landscape-oriented available space
+      const availH = portrait ? vw : vh;
+      const s = Math.min(1, availW / DESIGN_W, availH / DESIGN_H);
+
+      if (s < 1 || portrait) {
+        root.classList.add('sr-fit');
+        root.classList.toggle('sr-rot', portrait);
+        root.style.setProperty('--sr-s', String(s));
+      } else {
+        root.classList.remove('sr-fit', 'sr-rot');
+        root.style.removeProperty('--sr-s');
+      }
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    window.addEventListener('orientationchange', fit);
+
+    return () => {
+      root.style.overflow = prevOverflow;
+      root.style.overscrollBehavior = prevOverscroll;
+      root.classList.remove('sr-fit', 'sr-rot');
+      root.style.removeProperty('--sr-s');
+      window.removeEventListener('resize', fit);
+      window.removeEventListener('orientationchange', fit);
+    };
+  }, []);
+
   return <LoopSerenity onExit={() => nav('/')} />;
 }

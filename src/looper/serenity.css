@@ -406,3 +406,58 @@
 
 @media(prefers-reduced-motion:reduce){ .sr-root *{animation:none !important} .sr-cap{transition:none} .sr-rise{opacity:1; transform:none; filter:none} .sr-cursor-fx{display:none} }
 @media(max-width:900px){ .sr-dock{flex-direction:column} .sr-help .kp-grid{grid-template-columns:1fr} }
+
+/* ---- FIT MODE: zoomed-out studio for small screens (mobile landscape) ----
+   Studio.tsx adds html.sr-fit + --sr-s when the viewport is smaller than the
+   design stage (880x430). We render the FULL desktop-class layout at that fixed
+   stage size, then uniformly scale it to fit — a true zoomed-out version, all
+   controls reachable, zero scroll. Compact tweaks below keep the stage tidy. */
+html.sr-fit .sr-root{
+  inset:auto; top:50%; left:50%;
+  width:940px; height:470px;                 /* == DESIGN_W / DESIGN_H */
+  transform:translate(-50%,-50%) scale(var(--sr-s,1));
+  transform-origin:center center;
+  padding:10px 14px; gap:8px;
+  --u:clamp(20px, min(4.6vw, 7vh), 44px);
+}
+/* PORTRAIT phone/tablet → rotate the whole studio into landscape so it fills
+   the screen sideways. Pointer events remap through the transform automatically,
+   so every control still works. Turning the device to real landscape removes
+   this (Studio.tsx recomputes on orientationchange). */
+html.sr-fit.sr-rot .sr-root{
+  transform:translate(-50%,-50%) rotate(90deg) scale(var(--sr-s,1));
+}
+/* one-time nudge to rotate the device, fades out */
+html.sr-fit.sr-rot body::after{
+  content:'\21BB  rotate for the full view';
+  position:fixed; left:50%; bottom:14px; transform:translateX(-50%);
+  z-index:200; padding:8px 14px; border-radius:999px;
+  font:500 12px/1 'Bricolage Grotesque', system-ui, sans-serif; letter-spacing:.08em;
+  color:#e9e4ff; background:rgba(20,16,40,.7); border:1px solid rgba(184,172,255,.3);
+  backdrop-filter:blur(8px); pointer-events:none;
+  animation:srRotHint 5s ease-in-out forwards;
+}
+@keyframes srRotHint{0%,70%{opacity:1}100%{opacity:0}}
+html.sr-fit .sr-dock{ flex-direction:row; flex:0 0 auto; gap:8px; }
+/* topbar: one tight row */
+html.sr-fit .sr-top{ gap:9px; flex-wrap:nowrap; }
+html.sr-fit .sr-top-ctl{ gap:6px; flex-wrap:nowrap; }
+html.sr-fit .sr-brand{ gap:9px; }
+html.sr-fit .sr-logo{ width:28px; height:28px; }
+html.sr-fit .sr-brand .wm{ font-size:1.05rem; }
+html.sr-fit .sr-top .chip{ height:36px; padding:0 9px; gap:6px; border-radius:11px; }
+html.sr-fit .sr-top .chip.tog{ height:36px; padding:0 10px; font-size:.62rem; }
+html.sr-fit .sr-top .chip .v{ font-size:.92rem; }
+html.sr-fit .sr-top .chip .v.sm{ font-size:.76rem; }
+html.sr-fit .sr-top .chip .k{ font-size:.52rem; }
+html.sr-fit .sr-top .chip.slide input[type=range]{ width:88px; }
+/* tape stage: capped so the play board stays on screen */
+html.sr-fit .sr-stage{ flex:0 0 auto; min-height:0; height:96px; gap:10px; }
+html.sr-fit .sr-tape{ min-height:0; border-radius:14px; }
+/* instrument chips compact so the grid stays ~2 rows */
+html.sr-fit .sr-tabs{ padding:8px 10px; border-radius:14px; gap:6px; }
+html.sr-fit .sr-tab{ padding:6px 11px; font-size:.82rem; gap:5px; border-radius:10px; }
+html.sr-fit .sr-tab .tk{ font-size:.58rem; padding:1px 4px; }
+html.sr-fit .sr-pod{ padding:10px 16px; gap:12px; border-radius:14px; }
+/* on-screen keys are the ONLY way to play on touch — keep the board prominent */
+html.sr-fit .sr-board{ flex:0 0 auto; padding:3px 10px 0; }
