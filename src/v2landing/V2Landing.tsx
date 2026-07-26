@@ -31,6 +31,23 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, cw: num
   ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
 }
 
+function StudioTablet() {
+  return (
+    <div className="v2-tablet">
+      <div className="v2-tabscreen">
+        <div className="v2-tabbar"><i /><i /><i /><span>Aurora Groove — Studio</span><em>● REC</em></div>
+        <div className="v2-tabtimeline">{Array.from({ length: 24 }).map((_, i) => <i key={i} className={i % 5 === 0 ? 'on' : ''} />)}</div>
+        <div className="v2-tabrows">
+          {['Drums', 'Bass', 'Chords', 'Voice'].map((n, i) => (
+            <div key={n} className="v2-tabrow"><span>{n}</span><em>M</em><em>S</em><i style={{ width: `${40 + i * 14}%` }} /></div>
+          ))}
+        </div>
+        <div className="v2-tabkeys">{['C', 'D', 'E', 'G', 'A', 'C', 'D', 'E'].map((n, i) => <span key={i} className={i === 3 ? 'lit' : ''}>{n}</span>)}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function V2Landing() {
   const nav = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -128,18 +145,7 @@ export default function V2Landing() {
 
       {/* beat 1 — tablet showing the studio */}
       <div ref={setBeat(1)} className="v2-beat v2-btablet" style={{ opacity: 0 }}>
-        <div className="v2-tablet">
-          <div className="v2-tabscreen">
-            <div className="v2-tabbar"><i /><i /><i /><span>Aurora Groove — Studio</span><em>● REC</em></div>
-            <div className="v2-tabtimeline">{Array.from({ length: 24 }).map((_, i) => <i key={i} className={i % 5 === 0 ? 'on' : ''} />)}</div>
-            <div className="v2-tabrows">
-              {['Drums', 'Bass', 'Chords', 'Voice'].map((n, i) => (
-                <div key={n} className="v2-tabrow"><span>{n}</span><em>M</em><em>S</em><i style={{ width: `${40 + i * 14}%` }} /></div>
-              ))}
-            </div>
-            <div className="v2-tabkeys">{['C', 'D', 'E', 'G', 'A', 'C', 'D', 'E'].map((n, i) => <span key={i} className={i === 3 ? 'lit' : ''}>{n}</span>)}</div>
-          </div>
-        </div>
+        <StudioTablet />
         <span className="v2-cap">the whole studio — right in your browser</span>
       </div>
 
@@ -169,6 +175,8 @@ export default function V2Landing() {
               </span>
             ))}
           </h1>
+          <p className="v2-sub">A music studio in your browser. Pick an instrument or sing, stack loops on the beat — every key's already in tune, so nothing you play is wrong. No install.</p>
+          <div className="v2-gatetablet"><StudioTablet /></div>
           <button className={'v2-begin' + (ready ? ' ready' : '')} onClick={begin} disabled={!ready}>
             {ready ? 'Tap to begin' : `Loading ${Math.round((loaded / FRAMES) * 100)}%`}
           </button>
