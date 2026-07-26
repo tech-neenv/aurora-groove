@@ -32,8 +32,12 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, cw: num
 }
 
 function StudioTablet() {
+  const [imgOk, setImgOk] = useState(true);
   return (
     <div className="v2-tablet">
+      {imgOk ? (
+        <img className="v2-tabimg" src="/assets/images/studio.png" alt="Aurora Groove — Studio" onError={() => setImgOk(false)} />
+      ) : (
       <div className="v2-tabscreen">
         <div className="v2-tabbar"><i /><i /><i /><span>Aurora Groove — Studio</span><em>● REC</em></div>
         <div className="v2-tabtimeline">{Array.from({ length: 24 }).map((_, i) => <i key={i} className={i % 5 === 0 ? 'on' : ''} />)}</div>
@@ -44,6 +48,7 @@ function StudioTablet() {
         </div>
         <div className="v2-tabkeys">{['C', 'D', 'E', 'G', 'A', 'C', 'D', 'E'].map((n, i) => <span key={i} className={i === 3 ? 'lit' : ''}>{n}</span>)}</div>
       </div>
+      )}
     </div>
   );
 }
@@ -55,6 +60,7 @@ export default function V2Landing() {
   const beatRefs = useRef<Array<HTMLDivElement | null>>([]);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const logoRef = useRef<HTMLDivElement | null>(null);
+  const heroRef = useRef<HTMLDivElement | null>(null);
   const imgs = useRef<HTMLImageElement[]>([]);
   const begunRef = useRef(false);
   const [begun, setBegun] = useState(false);
@@ -91,6 +97,9 @@ export default function V2Landing() {
       const fi = Math.min(FRAMES - 1, Math.round(p * (FRAMES - 1)));
       const im = imgs.current[fi];
       if (im && im.complete && im.naturalWidth) drawCover(ctx, im, window.innerWidth, window.innerHeight);
+
+      // persistent hero (title + explainer + studio tablet + filter) fades on scroll
+      if (heroRef.current) { heroRef.current.style.opacity = Math.max(0, Math.min(1, 1 - p / 0.14)).toFixed(3); heroRef.current.style.pointerEvents = begunRef.current ? 'none' : 'auto'; }
 
       if (begunRef.current) {
         rockSong.setBuild(p);
@@ -165,24 +174,26 @@ export default function V2Landing() {
         <cite>Maya · first-timer</cite>
       </div>
 
-      {/* gate */}
-      {!begun && (
-        <div className="v2-gate">
-          <h1 className="v2-title" aria-label={TITLE}>
-            {TITLE.split(' ').map((word, wi) => (
-              <span key={wi} className="v2-word">
-                {word.split('').map((ch, ci) => { const d = gi++ * 55; return <span key={ci} className="v2-ch" style={{ ['--d' as string]: `${d}ms` }}>{ch}</span>; })}
-              </span>
-            ))}
-          </h1>
-          <p className="v2-sub">A music studio in your browser. Pick an instrument or sing, stack loops on the beat — every key's already in tune, so nothing you play is wrong. No install.</p>
-          <div className="v2-gatetablet"><StudioTablet /></div>
-          <button className={'v2-begin' + (ready ? ' ready' : '')} onClick={begin} disabled={!ready}>
-            {ready ? 'Tap to begin' : `Loading ${Math.round((loaded / FRAMES) * 100)}%`}
-          </button>
-          <span className="v2-hint">headphones on · scroll to play</span>
-        </div>
-      )}
+      {/* persistent hero — filter + title + explainer + studio tablet; fades on scroll */}
+      <div className="v2-hero" ref={heroRef}>
+        <h1 className="v2-title" aria-label={TITLE}>
+          {TITLE.split(' ').map((word, wi) => (
+            <span key={wi} className="v2-word">
+              {word.split('').map((ch, ci) => { const d = gi++ * 55; return <span key={ci} className="v2-ch" style={{ ['--d' as string]: `${d}ms` }}>{ch}</span>; })}
+            </span>
+          ))}
+        </h1>
+        <p className="v2-sub">A music studio in your browser. Pick an instrument or sing, stack loops on the beat — every key's already in tune, so nothing you play is wrong. No install.</p>
+        <div className="v2-gatetablet"><StudioTablet /></div>
+        {!begun && (
+          <>
+            <button className={'v2-begin' + (ready ? ' ready' : '')} onClick={begin} disabled={!ready}>
+              {ready ? 'Tap to begin' : `Loading ${Math.round((loaded / FRAMES) * 100)}%`}
+            </button>
+            <span className="v2-hint">headphones on · scroll to play</span>
+          </>
+        )}
+      </div>
     </div>
   );
 }
